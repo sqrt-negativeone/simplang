@@ -3,117 +3,135 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE (YET TO BE NAMED)
 
 ## TOKEN DECLARATION
 
-* `letter = a...z | A...Z`
+* `letter := a...z | A...Z`
 
-* `digit = 0...9`
+* `digit := 0...9`
 
-* `letgit = letter | digit`
+* `letgit := letter | digit`
 
-* `ID = letter letgit*`
+* `ID := letter letgit*`
 
-* `CONSTNUM = digit*`
+* `CONSTNUM := digit*`
 
-* `CONSTCHAR = single byte character`
+* `CONSTCHAR := single byte character`
 
-* `CONSTSTRING = sequence of one or more byte character`
+* `CONSTSTRING := sequence of one or more byte character`
 
 ## GRAMMAR
 
-* `PROG = DECLIST`
+* `PROG := DECLIST`
 
-* `DECLIST = (DECL)*`
+* `DECLIST := (DECL)*`
 
-* `DECL = VARDEC | TYPEDEC | FNCDEC`
+* `DECL := VARDEC | TYPEDEC | FNCDEC`
 
-* `VARDEC = VARDECLIST : TYPESPEC ;`
+* `VARDEC := ID : TYPESPEC; | VARDECLID : TYPESPEC = SIMPLEXP;`
 
-* `VARDECLIST = (VARDECLIST , | EMPTY) VARDECLINIT`
+* `VARDECLID := ID | ID [ CONSTNUM ]`
 
-* `VARDECLINIT = VARDECLID | VARDECLID = SIMPLEXP`
+* `TYPESPEC := int | float | double | chr | str | bool | ID`
 
-* `VARDECLID = ID | ID [ CONSTNUM ]`
+* `TYPEDEC := type ID { (VARDEC)+ };`
 
-* `TYPESPEC = int | float | double | chr | str | bool | ID`
+* `FNCDEC := fnc ID (ARGS) : FNCTYPESPEC FNCDEC_AUX`
 
-* `TYPEDEC = type { (VARDEC)+ };`
+* `FNCDEC_AUX  :=  ; | STMT`
 
-* `FNCDEC = fnc ID (ARGS) : FNCTYPESPEC (; | STMT)`
+* `FNCTYPESPEC  :=  void | TYPESPEC`
 
-* `FNCTYPESPEC = void | TYPESPEC`
+* `ARGS  :=  ARGSLIST | void | EMPTY`
 
-* `ARGS = ARGSLIST | void | EMPTY`
+* `ARGLIST  :=  ARG ARGLIST_AUX`
 
-* `ARGLIST = (ARGLIST, | EMTY) ARG`
+* `ARGLIST_AUX  :=  , ARG ARGLIST_AUX | EMPTY`
 
-* `ARG = TYPESPEC ARGID`
+* `ARG  :=  ARGID : TYPESPEC`
 
-* `ARGID = ID | ID []`
+* `ARGID  :=  ID | ID []`
 
-* `STMT = EXP_STMT | COMPLEX_STMT | IF_STMT | LOOP_STMT | RETURN_STMT | BREAK_STMT | SWITCH_STMT | CONTINUE_STMT`
+* `STMT  :=  EXP_STMT | COMPLEX_STMT | IF_STMT | LOOP_STMT | RETURN_STMT | BREAK_STMT | SWITCH_STMT | CONTINUE_STMT`
 
-* `EXP_STMT = EXP ; | ;`
+* `EXP_STMT  :=  EXP ; | ;`
 
-* `COMPLEX_STMT = {VARDEC STMT_LIST}`
+* `COMPLEX_STMT  :=  { VARDEC STMT_LIST }`
 
-* `STMT_LIST = STMT_LIST STMT | EMPTY`
+* `STMT_LIST  :=  STMT STMT_LIST | EMPTY`
 
-* `IF_STMT = if SIMPLEXP { STMT } ELSE_IF_STMT`
+* `IF_STMT  :=  if SIMPLEXP { STMT } ELSE_IF_STMT`
 
-* `ELSE_IF_STMT = else IF_STMT | else { STMT } | EMPTY`
+* `ELSE_IF_STMT  :=  else ELSE_AUX_STMT | EMPTY`
 
-* `LOOP_STMT = while SIMPLEXP {STMT} | for ID = RANGE {STMT}`
+* `ELSE_AUX_STMT  :=  IF_STMT | { STMT }`
 
-* `RANGE = SIMPLEXP to SIMPLEXP | SIMPLEXP to SIMPLEXP jump SIMPLEXP | : ID`
+* `LOOP_STMT  :=  while SIMPLEXP { STMT } | for ID := RANGE { STMT }`
 
-* `RETURN_STMT = return; | return EXP;`
+* `RANGE  :=  SIMPLEXP to SIMPLEXP RANGE_TAIL | in SIMPLEXP`
 
-* `BREAK_STMT = break;`
+* `RANGE_TAIL = jump SIMPLEXP | EMPTY`
 
-* `CONTINUE_STMT = continue;`
+* `RETURN_STMT  :=  return; | return EXP;`
 
-* `SWITCH_STATME = switch SIMPLEXP {WHEN_PART DEFAULT_PART}`
+* `BREAK_STMT  :=  break;`
 
-* `WHEN_PART = when SIMPLEXP : STMT | EMPTY`
+* `CONTINUE_STMT  :=  continue;`
 
-* `DEFAULT_PART = default STMT | EMPTY`
+* `SWITCH_STMT  :=  switch SIMPLEXP { WHEN_PART DEFAULT_PART }`
 
-* `EXP = MUTABLE = EXP | MUTABLE += EXP | MUTABLE -= EXP | MUTABLE *= EXP | MUTABLE /= EXP | MUTABLE++ | MUTABLE--| SIMPLEXP`
+* `WHEN_PART  :=  when SIMPLEXP : STMT WHEN_PART | EMPTY`
 
-* `SIMPLEXP = SIMPLEXP or AND_EXP | ANDEXP`
+* `DEFAULT_PART  :=  default STMT | EMPTY`
 
-* `AND_EXP = AND_EXP and UNARY_RELATION_EXP | UNARY_REL_EXP`
+* `EXP  :=  MUTABLE = EXP | MUTABLE += EXP | MUTABLE -= EXP | MUTABLE *= EXP | MUTABLE /= EXP | MUTABLE++ | MUTABLE--| SIMPLEXP`
 
-* `UNARY_REL_EXP = NOT UNARY_REL_EXP | REL_EXP`
+* `SIMPLEXP := ANDEXP SIMEPLEXP_AUX`
 
-* `REL_EXP = SUM_EXP REL_OP SUM_EXP`
+* `SIMPLEXP_AUX := or ANDEXP SIMPLEXP_AUX | EMPTY`
 
-* `REL_OP = <= | < | > | >= | == | !=`
+* `AND_EXP := UNARY_REL_EXP AND_EXP_AUX`
 
-* `SUM_EXP = SUM_EXP SUM_OP MULT_EXP`
+* `AND_EXP_AUX := and UNARY_REL_EXP AND_EXP_AUX | EMPTY`
 
-* `SUM_OP = + | -`
+* `UNARY_REL_EXP := NOT UNARY_REL_EXP | REL_EXP`
 
-* `MULT_EXP = MULT_EXP MUTL_OP UNARY_EXP`
+* `REL_EXP := SUM_EXP REL_OP SUM_EXP`
 
-* `MULT_EXP = * | / | %`
+* `REL_OP := <= | < | > | >= | == | !=`
 
-* `UNARY_EXP = UNARY_OP UNARY_EXP | FACT`
+* `SUM_EXP := MULT_EXP SUM_EXP_AUX`
 
-* `UNARY_EXP = + | - | ?`
+* `SUM_EXP_AUX := SUM_OP MULT_EXP SUM_EXP_AUX | EMPTY`
 
-* `FACT = IMMUTABLE | MUTABLE`
+* `SUM_OP := + | -`
 
-* `MUTABLE = ID | ID [EXP]`
+* `MULT_EXP := UNARY_EXP MULT_EXP_AUX`
 
-* `IMMUTABLE = ( EXP ) | CALL | CONSTANT`
+* `MULT_EXP_AUX := MULT_OP UNARY_EXP MULT_EXP_AUX | EMPTY`
 
-* `CALL = ID ( ARGS_CALL )`
+* `MULT_EXP := * | / | %`
 
-* `ARGS_CALL = EMPTY | ARGS_CALL_LIST`
+* `UNARY_EXP := UNARY_OP UNARY_EXP | FACT`
 
-* `ARGS_CALL_LIST = ARGS_CALL_LIST , EXP | EXP`
+* `UNARY_EXP := + | - | ?`
 
-* `CONST = CONSTCHAR | CONSTNUM | CONSTSTRING | true | false`
+* `FACT := IMMUTABLE | MUTABLE`
+
+* `MUTABLE := ID MUTABLE_AUX MUTABLE_TAIL`
+
+* `MUTABLE_AUX := EMPTY | [ EXP ]`
+
+* `MUTABLE_TAIL := . MUTABLE`
+
+* `IMMUTABLE := ( EXP ) | CALL | CONSTANT`
+
+* `CALL := ID ( ARGS_CALL )`
+
+* `ARGS_CALL := EMPTY | ARGS_CALL_LIST`
+
+* `ARGS_CALL_LIST := EXP ARGS_CALL_LIST_AUX`
+
+* `ARGS_CALL_LIST_AUX := , EXP ARGS_CALL_LIST_AUX | EMPTY`
+
+* `CONST := CONSTCHAR | CONSTNUM | CONSTSTRING | true | false`
 
 ## KEYWORDS
 
