@@ -1,0 +1,5 @@
+hello_text : ste = "Hello World!";
+
+fnc main(void) : void {
+    put(hello_text);
+}

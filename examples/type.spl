@@ -1,0 +1,14 @@
+type Person {
+    name : str;
+    age : int;
+}
+
+fnc main(void) : void {
+
+    smn : Person;
+    smn.name = "Zeus";
+    smn.age = 42069;
+    
+    put(smn.name);
+    put(smn.age);
+}
