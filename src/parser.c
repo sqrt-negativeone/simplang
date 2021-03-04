@@ -9,7 +9,7 @@ void program(){
 }
 
 void decl_list(){
-    if (current_token.type == EOF) return;
+    if (current_token.type == EOFF) return;
     decl();
     decl_list();
 }
