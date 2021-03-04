@@ -45,7 +45,7 @@ void var_decl_id(){
 }
 
 void var_decl_id_aux(){
-    if (current_token.type != DELIMETER_LEFT_BRAKET) return;
+    if (current_token.type != DELIMETER_LEFT_BRACKET) return;
     get_next_token();
     if (current_token.type != NUMBER_CONST) error();
     get_next_token();
@@ -165,7 +165,7 @@ void arg_id(){
     arg_id_tail();
 }
 void arg_id_tail(){
-    if (current_token.type != DELIMETER_LEFT_BRAKET) return;
+    if (current_token.type != DELIMETER_LEFT_BRACKET) return;
     get_next_token();
     if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
 }
@@ -440,7 +440,7 @@ void post_id(){
     case DELIMETER_OPEN_PAR:
         call();
         break;
-    case DELIMETER_LEFT_BRAKET:
+    case DELIMETER_LEFT_BRACKET:
         get_next_token();
         exp();
         if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
