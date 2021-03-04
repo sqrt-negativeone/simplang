@@ -82,7 +82,7 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 {NUMBER}      {return NUMBER_CONST;}
 {FLOAT}       {return FLOAT_CONST;}
 
-[\n]          {} 			 
+[\n]+          {} 			 
 [ \r\t]+	  {}
 
 . 			  { printf("unexpected character, line = %d\n", line); return ERRONEOUS;}
