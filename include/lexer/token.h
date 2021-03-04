@@ -68,7 +68,6 @@ enum _token_class_t{
     NUMBER_CONST,
     FLOAT_CONST
 };
-
 struct _token_t{
     token_class_t type;
     char* value;
