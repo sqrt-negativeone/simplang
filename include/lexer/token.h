@@ -1,11 +1,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-typedef struct _token_t token_t;
-typedef enum _token_class_t token_class_t;
-
-enum _token_class_t{
-    EOF,
+enum token_class_t{
+    EOFF,
     ERRONEOUS,
     KEYWORD_PUT,
     KEYWORD_GET,
@@ -67,10 +64,12 @@ enum _token_class_t{
     NUMBER_CONST,
     FLOAT_CONST
 };
+
 struct _token_t{
-    token_class_t type;
+    enum token_class_t t;
     char* value;
     int line_no;
 };
 
+typedef struct _token_t token_t;
 #endif

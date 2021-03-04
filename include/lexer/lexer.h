@@ -7,6 +7,4 @@
 //when called, it loads the current_token variable with the information of the next token in input file
 extern void get_next_token();
 
-//placeholder of all the necessary information about the current token.
-extern token_t current_token;
 #endif
