@@ -1,5 +1,3 @@
-hello_text : str = "Hello World!";
-
 fnc main(void) : void {
-    put(hello_text);
+    put("Hello World!");
 }
