@@ -82,7 +82,7 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 {NUMBER}      {return NUMBER_CONST;}
 {FLOAT}       {return FLOAT_CONST;}
 
-\n          { line++}
+\n          { line++;}
 [ \r\t]+	  {}
 
 . 			  { printf("unexpected character, line = %d\n", line); return ERRONEOUS;}
@@ -95,19 +95,3 @@ void get_next_token()
 	current_token.line_no = line;
 	current_token.value = yytext;
 }
-
-int main(void)
-{
-	token_t ntoken = get_next_token();
-
-	printf("hello zeus\n");
-	printf("this is the fuckin 51 , %d\n", IDENTIFIER);
-	while(ntoken.t != EOFF)
-	{
-		printf("line : %d\t tokenValue : %s\t tokenType : %d\n", ntoken.line_no, ntoken.value, ntoken.t);
-		ntoken = get_next_token();
-	}
-	
-	return 0;
-}
-
