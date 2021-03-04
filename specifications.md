@@ -7,7 +7,7 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE (YET TO BE NAMED)
 
 * `digit := 0...9`
 
-* `letgit := letter | digit`
+* `letgit := letter | digit _`
 
 * `ID := letter letgit*`
 
@@ -21,17 +21,23 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE (YET TO BE NAMED)
 
 * `PROG := DECLIST`
 
-* `DECLIST := (DECL)*`
+* `DECLIST := EMPTY | DECL DECLIST`
 
 * `DECL := VARDEC | TYPEDEC | FNCDEC`
 
-* `VARDEC := ID : TYPESPEC; | VARDECLID : TYPESPEC = SIMPLEXP;`
+* `VARDEC :=  VARDECLID : TYPESPEC VAR_DEC_TAIL`
 
 * `VARDECLID := ID | ID [ CONSTNUM ]`
 
+* `VARDECLID_AUX := EMPTY | [ CONSTNUM ]`
+
+* `VARD_DEC_TAIL := ; | = SIMPLEXP ;`
+
 * `TYPESPEC := int | float | double | chr | str | bool | ID`
 
-* `TYPEDEC := type ID { (VARDEC)+ };`
+* `TYPEDEC := type ID { VARDEC VARDECLIST };`
+
+* `VARDECLIST := VARDEC VARDECLIST | EMPTY`
 
 * `FNCDEC := fnc ID (ARGS) : FNCTYPESPEC FNCDEC_AUX`
 
@@ -107,11 +113,11 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE (YET TO BE NAMED)
 
 * `MULT_EXP_AUX := MULT_OP UNARY_EXP MULT_EXP_AUX | EMPTY`
 
-* `MULT_EXP := * | / | %`
+* `MULT_OP := * | / | %`
 
 * `UNARY_EXP := UNARY_OP UNARY_EXP | FACT`
 
-* `UNARY_EXP := + | - | ?`
+* `UNARY_OP := + | - | ?`
 
 * `FACT := IMMUTABLE | MUTABLE`
 
