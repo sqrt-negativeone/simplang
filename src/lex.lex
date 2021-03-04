@@ -1,11 +1,12 @@
 %{
-#include "../include/lexer/lexer.h"
-#include "../include/lexer/token.h"
+#include "lexer/lexer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 int line = 1;
+
+token_t current_token;
 
 %}
 
@@ -47,34 +48,33 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 "or"		{return KEYWORD_OR;}
 "not"		{return KEYWORD_NOT;}
 "jump"		{return KEYWORD_JUMP;}
-"main"		{return KEYWORD_MAIN;}
 "void"		{return KEYWORD_VOID;}
-\:			{return DELEMETER_COLON;}
-\;			{return DELEMETER_SEMICOLON;}
-\(			{return DELEMETER_OPEN_PAR;}
-\)			{return DELEMETER_CLOS_PAR;}
-\{			{return DELEMETER_CURL_OPEN_PAR;}
-\}			{return DELEMETER_CURL_CLOS_PAR;}
-\+			{return DELEMETER_PLUS;}
-\-			{return DELEMETER_MINUS;}
-\*			{return DELEMETER_STAR;}
-"%"			{return DELEMETER_PERCENTAGE;}
-\=			{return DELEMETER_ASSIGN;}
-\<			{return DELEMETER_LESS;}
-\<\=		{return DELEMETER_LESS_EQ;}
-\>			{return DELEMETER_GREATER;}
-\>\=		{return DELEMETER_GREATER_EQ;}
-\=\=		{return DELEMETER_EQUAL;}
-\!\=		{return DELEMETER_NOT_EQUAL;}
-\/			{return DELEMETER_DIVIDE;}
-\/\=		{return DELEMETER_DIVIDE_EQ;}
-\*\=		{return DELEMETER_MULT_EQ;}
-\+\=		{return DELEMETER_PLUS_EQ;}
-\-\=		{return DELEMETER_MINUS_EQ;}
-\,			{return DELEMETER_COMMA;}
-\.			{return DELEMETER_DOT;}
-\[			{return DELEMETER_LEFT_BRACKET;}
-\]			{return DELEMETER_RIGHT_BRACKET;}
+\:			{return DELIMETER_COLON;}
+\;			{return DELIMETER_SEMICOLON;}
+\(			{return DELIMETER_OPEN_PAR;}
+\)			{return DELIMETER_CLOS_PAR;}
+\{			{return DELIMETER_CURL_OPEN_PAR;}
+\}			{return DELIMETER_CURL_CLOS_PAR;}
+\+			{return DELIMETER_PLUS;}
+\-			{return DELIMETER_MINUS;}
+\*			{return DELIMETER_STAR;}
+"%"			{return DELIMETER_PERCENTAGE;}
+\=			{return DELIMETER_ASSIGN;}
+\<			{return DELIMETER_LESS;}
+\<\=		{return DELIMETER_LESS_EQ;}
+\>			{return DELIMETER_GREATER;}
+\>\=		{return DELIMETER_GREATER_EQ;}
+\=\=		{return DELIMETER_EQUAL;}
+\!\=		{return DELIMETER_NOT_EQUAL;}
+\/			{return DELIMETER_SLASH;}
+\/\=		{return DELIMETER_DIVIDE_EQ;}
+\*\=		{return DELIMETER_MULT_EQ;}
+\+\=		{return DELIMETER_PLUS_EQ;}
+\-\=		{return DELIMETER_MINUS_EQ;}
+\,			{return DELIMETER_COMMA;}
+\.			{return DELIMETER_DOT;}
+\[			{return DELIMETER_LEFT_BRACKET;}
+\]			{return DELIMETER_RIGHT_BRACKET;}
 {COMMENTS}    {return COMMENT;}
 {ID}		  {return IDENTIFIER;}
 {CHR} 		  {return CHR_LITERAL;}
@@ -82,30 +82,18 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 {NUMBER}      {return NUMBER_CONST;}
 {FLOAT}       {return FLOAT_CONST;}
 
-[\n]+          {} 			 
+\n          { line++}
 [ \r\t]+	  {}
 
 . 			  { printf("unexpected character, line = %d\n", line); return ERRONEOUS;}
 
 %%
 
-token_t get_next_token()
+void get_next_token()
 {
-	extern int yylex();
-	extern int yylineno;
-	extern char* value;
-
-	int token;
-
-	token_t the_token;
-
-	token = yylex();
-
-	the_token.value = yytext;
-    the_token.line_no = yylineno;
-    the_token.t = token;
-
-    return the_token;
+	current_token.type = yylex();
+	current_token.line_no = line;
+	current_token.value = yytext;
 }
 
 int main(void)
