@@ -1,11 +1,8 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-typedef struct _token_t token_t;
-typedef enum _token_class_t token_class_t;
-
-enum _token_class_t{
-    EOF,
+enum token_class_t{
+    EOFF,
     ERRONEOUS,
     KEYWORD_PUT,
     KEYWORD_GET,
@@ -45,16 +42,16 @@ enum _token_class_t{
     DELEMETER_GREATER,
     DELEMETER_GREATER_EQ,
     DELEMETER_EQUAL,
-    DELEMTER_NOT_EQUAL,
+    DELEMETER_NOT_EQUAL,
+    DELEMETER_DIVIDE,
     DELEMETER_DIVIDE_EQ,
     DELEMETER_MULT_EQ,
     DELEMETER_PLUS_EQ,
     DELEMETER_MINUS_EQ,
     DELEMETER_COMMA,
     DELEMETER_DOT,
-    DELEMETER_LEFT_BRAKET,
+    DELEMETER_LEFT_BRACKET,
     DELEMETER_RIGHT_BRACKET,
-    DELEMETER_UNDERSCORE,
     COMMENT,
     IDENTIFIER,
     CHR_LITERAL,
@@ -64,10 +61,12 @@ enum _token_class_t{
     NUMBER_CONST,
     FLOAT_CONST
 };
+
 struct _token_t{
-    token_class_t type;
+    enum token_class_t t;
     char* value;
     int line_no;
 };
 
+typedef struct _token_t token_t;
 #endif
