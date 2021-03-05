@@ -96,14 +96,15 @@ typedef struct _ast_stmt_type_dec ast_stmt_type_dec;
 typedef union _ast_stmt_data_t ast_stmt_data_t;
 typedef struct _ast_stmt_return ast_stmt_return;
 typedef struct  _ast_stmt_break_continue  ast_stmt_break_continue;
+typedef struct _var_dec_data_t var_dec_data_t;
 typedef enum _stmt_type stmt_type;
-typedef struct _ast_stmt ast_stmt;
+typedef struct _ast_stmt_t ast_stmt_t;
 
 struct _param_list
 {
     char* id;
     char* type;
-    _param_list* next;
+    param_list* next;
 };
 
 struct _ast_stmt_fnc_dec
@@ -111,20 +112,24 @@ struct _ast_stmt_fnc_dec
     char* name;
     param_list* parameters;
     char* return_type;
-    ast_stmt *body;
+    ast_stmt_t *body;
 };
-
-struct _ast_stmt_var_dec
+struct _var_dec_data_t
 {
     char* name;
     char* type;
+    bool is_array;
+    int size;
+};
+struct _ast_stmt_var_dec
+{
+    var_dec_data_t data;
     ast_exp_t* declaration;
 };
 
 struct _fields_list
 {
-    char* name;
-    char* type;
+    var_dec_data_t data;
     fields_list* next;
 };
 
@@ -137,8 +142,8 @@ struct _ast_stmt_type_dec
 struct _ast_stmt_if
 {
     ast_exp_t* condition;
-    ast_stmt* if_body;
-    ast_stmt* else_body;
+    ast_stmt_t* if_body;
+    ast_stmt_t* else_body;
 };
 
 struct _ast_stmt_for
@@ -147,19 +152,19 @@ struct _ast_stmt_for
     int begin;
     int end;
     int jump;
-    ast_stmt* body;
+    ast_stmt_t* body;
 };
 
 struct _ast_stmt_while
 {
     ast_exp_t* condition;
-    ast_stmt* body;
+    ast_stmt_t* body;
 };
 
 struct _when_part_list
 {
     ast_exp_t* expression;
-    ast_stmt* body;
+    ast_stmt_t* body;
     when_part_list* next;
 };
 
@@ -167,7 +172,7 @@ struct _ast_stmt_switch
 {
     ast_exp_member_access* item;
     when_part_list* when_list;
-    ast_stmt* default_part;
+    ast_stmt_t* default_part;
 };
 
 struct _ast_stmt_return
@@ -206,11 +211,11 @@ enum _stmt_type
     BREAK_RETURN_STMT
 };
 
-struct _ast_stmt
+struct _ast_stmt_t
 {
     stmt_type type;
     ast_stmt_data_t* data;
-    ast_stmt* next;
+    ast_stmt_t* next;
 };
 
 //merge the two ASTs into one, the AST
@@ -226,7 +231,7 @@ enum _ast_type
 
 union _ast_data_t
 {
-    ast_stmt stmt;
+    ast_stmt_t stmt;
     ast_exp_t exp;
 };
 
@@ -264,7 +269,7 @@ void insert_ast_stmt(ast_t* ast, ast_t* elem){
     ast->data->stmt.next = &elem->data->stmt;
 }
 
-ast_t* create_ast_stmt_for(char* it, int begin, int end, int jump, ast_stmt* body){
+ast_t* create_ast_stmt_for(char* it, int begin, int end, int jump, ast_stmt_t* body){
     ast_t* ast_for = get_ast_stmt_node(FOR_STMT);
 
     ast_for->data->stmt.data->for_stmt.it = it;
@@ -276,7 +281,7 @@ ast_t* create_ast_stmt_for(char* it, int begin, int end, int jump, ast_stmt* bod
     return ast_for;
 }
 
-ast_t* create_ast_stmt_while(ast_exp_t* condition, ast_stmt* body){
+ast_t* create_ast_stmt_while(ast_exp_t* condition, ast_stmt_t* body){
     ast_t* ast_while = get_ast_stmt_node(WHILE_STMT);
 
     ast_while->data->stmt.data->while_stmt.body = body; 
@@ -285,7 +290,7 @@ ast_t* create_ast_stmt_while(ast_exp_t* condition, ast_stmt* body){
     return ast_while;
 }
 
-ast_t* create_ast_stmt_if(ast_exp_t* condition, ast_stmt* if_body, ast_stmt* else_body){
+ast_t* create_ast_stmt_if(ast_exp_t* condition, ast_stmt_t* if_body, ast_stmt_t* else_body){
     ast_t* ast_if = get_ast_stmt_node(IF_STMT);
 
     ast_if->data->stmt.data->if_stmt.condition = condition;
@@ -295,7 +300,7 @@ ast_t* create_ast_stmt_if(ast_exp_t* condition, ast_stmt* if_body, ast_stmt* els
     return ast_if;
 }
 
-ast_t* create_ast_stmt_switch(ast_exp_member_access* item, when_part_list* when_list, ast_stmt* default_part){
+ast_t* create_ast_stmt_switch(ast_exp_member_access* item, when_part_list* when_list, ast_stmt_t* default_part){
     ast_t* ast_switch = get_ast_stmt_node(SWITCH_STMT);
 
     ast_switch->data->stmt.data->switch_stmt.item = item;
@@ -305,7 +310,7 @@ ast_t* create_ast_stmt_switch(ast_exp_member_access* item, when_part_list* when_
     return ast_switch;
 }
 
-ast_t* create_ast_stmt_fnc_dec(char* name, param_list* parameters, ast_stmt* body){
+ast_t* create_ast_stmt_fnc_dec(char* name, param_list* parameters, ast_stmt_t* body){
     ast_t* ast_fnc_dec = get_ast_stmt_node(FNC_DEC_STMT);
 
     ast_fnc_dec->data->stmt.data->fnc_dec.name = name;
@@ -323,12 +328,18 @@ ast_t* create_ast_stmt_type_dec(char* name, fields_list* fields){
 
     return ast_type_dec;
 }
-
-ast_t* create_ast_stmt_var_dec(char* name, char* type, ast_exp_t* declaration){
+var_dec_data_t create_ar_dec_data(char* name, char* type, bool is_array, int size){
+    var_dec_data_t data;
+    data.is_array = is_array;
+    data.name = name;
+    data.size = size;
+    data.type = type;
+    return data;
+}
+ast_t* create_ast_stmt_var_dec(var_dec_data_t data, ast_exp_t* declaration){
     ast_t* ast_var_dec = get_ast_stmt_node(VAR_DEC_STMT);
 
-    ast_var_dec->data->stmt.data->var_dec.name = name;
-    ast_var_dec->data->stmt.data->var_dec.type = type;
+    ast_var_dec->data->stmt.data->var_dec.data = data;
     ast_var_dec->data->stmt.data->var_dec.declaration = declaration;
 
     return ast_var_dec;
@@ -385,10 +396,9 @@ ast_t* create_ast_exp_fnc_call(char* id, arg_list* args){
 
 // helper utilities
 
-fields_list* create_field_lists_node(char* name, char* type){
+fields_list* create_field_lists_node(var_dec_data_t data){
     fields_list* field = CALLOC(fields_list);
-    field->name = name;
-    field->type = type;
+    field->data = data;
     return field;
 }
 
