@@ -1,4 +1,4 @@
-GRAMMAR FOR THE PROGRAMMING LANGUAGE (YET TO BE NAMED)
+GRAMMAR FOR THE PROGRAMMING LANGUAGE : SimpLang
 ===============================================================
 
 ## TOKEN DECLARATION
