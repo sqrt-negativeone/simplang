@@ -95,3 +95,4 @@ void get_next_token()
 	current_token.line_no = line;
 	current_token.value = yytext;
 }
+int yywrap(void) {return 1;}
