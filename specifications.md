@@ -25,7 +25,7 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE : SimpLang
 
 * `DECL := VARDEC | TYPEDEC | FNCDEC`
 
-* `VARDEC :=  VARDECLID : TYPESPEC VAR_DEC_TAIL`
+* `VARDEC := let  VARDECLID : TYPESPEC VAR_DEC_TAIL`
 
 * `VARDECLID := ID VARDECLID_AUX`
 
@@ -35,11 +35,15 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE : SimpLang
 
 * `TYPESPEC := int | float | chr | str | bool | ID`
 
-* `TYPEDEC := type ID { VARDEC VARDECLIST };`
+* `TYPEDEC := type ID { FIELDEC FIELDEC_LIST };`
+
+* `FIELDEC := VARDECLID  : TYPESPEC ;`
+
+* `FIELDEC_LIST := FIELDEC DIELDEC_LIST | EMPTY`
 
 * `VARDECLIST := VARDEC VARDECLIST | EMPTY`
 
-* `FNCDEC := fnc ID (ARGS) : FNCTYPESPEC STMT`
+* `FNCDEC := fnc ID ( ARGS ) : FNCTYPESPEC STMT`
 
 * `FNCTYPESPEC  :=  void | TYPESPEC`
 
@@ -144,12 +148,12 @@ GRAMMAR FOR THE PROGRAMMING LANGUAGE : SimpLang
 ## KEYWORDS
 
 ```
+let
 put
 get
 if
 else
 for
-in
 to
 while
 type
@@ -167,4 +171,9 @@ or
 not
 jump
 void
+int
+float
+str
+chr
+bool
 ```

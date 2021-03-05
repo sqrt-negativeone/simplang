@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int line = 1;
 
@@ -25,7 +26,7 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 
 
 <<EOF>> {return EOFF;}
-
+"let"	{return KEYWORD_LET;}
 "put"   {return KEYWORD_PUT;}
 "get"	{return KEYWORD_GET;}
 "if"	{return KEYWORD_IF;}
@@ -49,6 +50,11 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 "not"		{return KEYWORD_NOT;}
 "jump"		{return KEYWORD_JUMP;}
 "void"		{return KEYWORD_VOID;}
+"int"		{return KEYWORD_INT;}
+"float"		{return KEYWORD_FLOAT;}
+"str"		{return KEYWORD_STR;}
+"chr"		{return KEYWORD_CHR;}
+"bool"		{return KEYWORD_BOOL;}
 \:			{return DELIMETER_COLON;}
 \;			{return DELIMETER_SEMICOLON;}
 \(			{return DELIMETER_OPEN_PAR;}
@@ -93,6 +99,6 @@ void get_next_token()
 {
 	current_token.type = yylex();
 	current_token.line_no = line;
-	current_token.value = yytext;
+	strcpy(current_token.value, yytext);
 }
 int yywrap(void) {return 1;}
