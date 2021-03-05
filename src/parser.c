@@ -278,10 +278,6 @@ void range(){
         simple_exp();
         range_tail();
     }
-    else if (current_token.type == KEYWORD_IN){
-        get_next_token();
-        simple_exp();
-    }
     else error();
 }
 void range_tail(){
@@ -451,6 +447,10 @@ void post_id(){
         if (current_token.type != IDENTIFIER) error();
         get_next_token();
         post_id();
+        break;
+    case DELIMETER_ASSIGN:
+        get_next_token();
+        exp();
         break;
     default:
         return;
