@@ -4,7 +4,6 @@
 extern char* source;
 
 int main(int argc, char* argv[]) {
-    source = "fnc main(void) : void {\n\tfor i : 0 to 100 {\n\t\tif i % 2 == 0 {\n\t\t\tput(i);\n\t\t}\n\t\telse {\n\t\t\tcontinue;\n\t\t}\n\t}\n}";
     if (argc == 2){
         FILE* file;
         file = fopen(argv[1], "r");
@@ -21,7 +20,6 @@ int main(int argc, char* argv[]) {
         printf("%s\n",source);
         init_lexer();
     }
-    init_lexer();
     ast_t* ast = program();
     if (ast != NULL) printf("Program well parsed!\n");
     return 0;
