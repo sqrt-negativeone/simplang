@@ -1,5 +1,5 @@
 fnc main(void) : void {
-    for i = 0 to 100 {
+    for i : 0 to 100 {
         if i % 2 == 0 {
             put(i);
         }
