@@ -5,7 +5,7 @@ type Person {
 
 fnc main(void) : void {
 
-    smn : Person;
+    let smn : Person;
     smn.name = "Zeus";
     smn.age = 42069;
     
