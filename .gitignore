@@ -69,6 +69,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-out/build/
+out/
 
 [bB][uU][iI][lL][dD]/
