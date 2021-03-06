@@ -9,6 +9,8 @@ int line = 1;
 
 token_t current_token;
 
+char* source;
+
 %}
 
 %option noyywrap
@@ -95,10 +97,17 @@ CHR            ([\']([^\n'"\\]|[\\][n]|[\\][t]|[\\][r]|[\\][\\]|[\\][']|[\\]["])
 
 %%
 
+void init_lexer(){
+	//yyin = f;
+	yy_scan_string(source);
+}
+
 void get_next_token()
 {
 	current_token.type = yylex();
 	current_token.line_no = line;
-	strcpy(current_token.value, yytext);
+	if (current_token.value == NULL || strlen(current_token.value) <= strlen(yytext) ){
+        current_token.value = malloc((size_t)(1.5 * strlen(yytext)) * sizeof(char));
+    }
+	strcpy(current_token.value, yytext);;
 }
-int yywrap(void) {return 1;}

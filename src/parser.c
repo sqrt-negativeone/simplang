@@ -61,7 +61,7 @@ ast_t* var_decl(){
         get_next_token();
         break;
     case IDENTIFIER:
-        memcpy(data.type, current_token.value, strlen(current_token.value));
+        data.type = current_token.value;
         get_next_token();
         break;
     default:
@@ -75,7 +75,7 @@ ast_t* var_decl(){
 
 void var_decl_id(var_dec_data_t* data){
     if (current_token.type != IDENTIFIER) error();
-    strcpy(data->name, current_token.value);
+    data->name = current_token.value;
     get_next_token();
     var_decl_id_aux(data);
 }
@@ -104,17 +104,17 @@ void var_decl_tail(ast_t* ast_var_dec){
     else error();
 }
 
-ast_t* typedec(){
+ast_t* type_decl(){
     ast_t* ast_node = create_ast_stmt_type_dec("", NULL);
     if (current_token.type != KEYWORD_TYPE) error();
     get_next_token();
     if (current_token.type != IDENTIFIER) error();
-    strcpy(ast_node->data->stmt.data->type_dec.name, current_token.value);
+    ast_node->data->stmt.data->type_dec.name = current_token.value;
     get_next_token();
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
     get_next_token();
-    fields_list* fields = var_decl();
-    fields->next = var_decl_list();
+    fields_list* fields = field_dec();
+    fields->next = field_dec_list();
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
     get_next_token();
     if (current_token.type != DELIMETER_SEMICOLON) error();
@@ -150,7 +150,7 @@ fields_list* field_dec(){
         get_next_token();
         break;
     case IDENTIFIER:
-        memcpy(data.type, current_token.value, strlen(current_token.value));
+        data.type= current_token.value;
         get_next_token();
         break;
     default:
@@ -158,6 +158,7 @@ fields_list* field_dec(){
         break;
     }
     if (current_token.type != DELIMETER_SEMICOLON) error();
+    get_next_token();
     fields_list* field = create_field_lists_node(data);
     return field;
 }
@@ -168,17 +169,13 @@ fields_list* field_dec_list(){
     root->next = field_dec_list();
     return root;
 }
-ast_t* var_decl_list(){
-    if (current_token.type != IDENTIFIER) return;
-    var_decl();
-    var_decl_list();
-}
+
 
 ast_t* fnc_decl(){
     if (current_token.type != KEYWORD_FNC) error();
     get_next_token();
     if (current_token.type != IDENTIFIER) error();
-    char* name; strcpy(name, current_token.value);
+    char* name = current_token.value;
     get_next_token();
     if (current_token.type != DELIMETER_OPEN_PAR) error();
     get_next_token();
@@ -189,7 +186,7 @@ ast_t* fnc_decl(){
     get_next_token();
     char* return_type = fnc_type_spec();
     ast_t* body = stmt();
-    return create_ast_stmt_fnc_dec(name,params,return_type, body);
+    return create_ast_stmt_fnc_dec(name,params,return_type, &body->data->stmt);
 }
 
 char* fnc_type_spec(){
@@ -222,7 +219,7 @@ char* fnc_type_spec(){
             get_next_token();
             break;
         case IDENTIFIER:
-            memcpy(data, current_token.value, strlen(current_token.value));
+            data = current_token.value;
             get_next_token();
             break;
         default:
@@ -253,7 +250,7 @@ param_list* fnc_args_list(){
 }
 
 param_list* fnc_args_list_aux(){
-    if (current_token.type != DELIMETER_COMMA) return;
+    if (current_token.type != DELIMETER_COMMA) return NULL;
     get_next_token();
     param_list* node = fnc_arg();
     node->next = fnc_args_list_aux();
@@ -288,7 +285,7 @@ param_list* fnc_arg(){
         get_next_token();
         break;
     case IDENTIFIER:
-        memcpy(data.type, current_token.value, strlen(current_token.value));
+        data.type = current_token.value;
         get_next_token();
         break;
     default:
@@ -299,7 +296,7 @@ param_list* fnc_arg(){
 }
 void arg_id(var_dec_data_t* data){
     if (current_token.type != IDENTIFIER) error();
-    strcpy(data->name, current_token.value);
+    data->name = current_token.value;
     get_next_token();
     arg_id_tail(data);
 }
@@ -329,14 +326,19 @@ ast_t* stmt(){
     case DELIMETER_CURL_OPEN_PAR:
         return complex_stmt();
     default:
-        return create_ast_stmt_empty();
+        return exp_stmt();
     }
 }
 ast_t* exp_stmt(){
-    if (current_token.type != DELIMETER_SEMICOLON) return create_ast_stmt_exp(&exp()->data->exp);
+    if (current_token.type != DELIMETER_SEMICOLON) {
+        ast_t* exp_stmt = create_ast_stmt_exp(&exp_()->data->exp);
+        if (current_token.type != DELIMETER_SEMICOLON) error();
+        get_next_token();
+        return exp_stmt;
+    }
     else {
         get_next_token();
-        return NULL;
+        return create_ast_stmt_empty();
     }
 }
 ast_t* complex_stmt(){
@@ -360,7 +362,7 @@ ast_t* complex_stmt(){
 }
 ast_t* stmt_list(){
     // if the current token is in the FOLLOW of the stmt_list
-    if (current_token.type == DELIMETER_CURL_CLOS_PAR) return;
+    if (current_token.type == DELIMETER_CURL_CLOS_PAR) return NULL;
     ast_t* ast_stmt = stmt();
     insert_ast_stmt(ast_stmt, stmt_list());
     return ast_stmt;
@@ -371,6 +373,7 @@ ast_t* if_stmt(){
     get_next_token();
     ast_t* condition = simple_exp();
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    get_next_token();
     ast_t* body = stmt();
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
     get_next_token();
@@ -432,7 +435,7 @@ for_range_t range(){
         return create_for_range(
                 &begin->data->exp, 
                 &end->data->exp,
-                ((jump == NULL)? jump : &jump->data->exp)
+                ((jump == NULL)? NULL : (&jump->data->exp))
             );
     }
     else error();
@@ -453,7 +456,7 @@ ast_t* return_stmt_tail(){
         return create_ast_stmt_return_stmt(NULL);
     }
     else {
-        ast_t* ast_stmt = exp();
+        ast_t* ast_stmt = exp_();
         if (current_token.type != DELIMETER_SEMICOLON) error();
         get_next_token();
         return create_ast_stmt_return_stmt(&ast_stmt->data->exp);
@@ -462,12 +465,14 @@ ast_t* return_stmt_tail(){
 ast_t* break_stmt(){
     get_next_token();
     if (current_token.type != DELIMETER_SEMICOLON) error();
+    get_next_token();
     return create_ast_stmt_break_continue_stmt(true);
 }
 
 ast_t* continue_stmt(){
     get_next_token();
     if (current_token.type != DELIMETER_SEMICOLON) error();
+    get_next_token();
     return create_ast_stmt_break_continue_stmt(false);
 }
 ast_t* switch_stmt(){
@@ -477,10 +482,10 @@ ast_t* switch_stmt(){
     when_part_list* when_lit = when_part();
     ast_t* ast_default_part = default_part();
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
-    return create_ast_stmt_switch(item, when_lit, ast_default_part);
+    return create_ast_stmt_switch(&item->data->exp,when_lit, &ast_default_part->data->stmt);
 }
 when_part_list* when_part(){
-    if (current_token.type != KEYWORD_WHEN) return;
+    if (current_token.type != KEYWORD_WHEN) return NULL;
     get_next_token();
     ast_t* expression = simple_exp();
     if (current_token.type != DELIMETER_COLON) error();
@@ -491,12 +496,12 @@ when_part_list* when_part(){
     return when_list;
 }
 ast_t* default_part(){
-    if (current_token.type != KEYWORD_DEFAULT) return NULL;
+    if (current_token.type != KEYWORD_DEFAULT) return create_ast_stmt_empty();
     get_next_token();
     return stmt();
 }
 
-ast_t* exp(){
+ast_t* exp_(){
     return simple_exp();
 }
 
@@ -534,7 +539,7 @@ ast_t* unary_rel_exp(){
     if (current_token.type == KEYWORD_NOT){
         get_next_token();
         ast_t* ast_exp = unary_rel_exp();
-        return create_ast_exp_operati(NOT_OPERATION, NULL, ast_exp);
+        return create_ast_exp_operation(NOT_OPERATION, NULL, &ast_exp->data->exp);
     }
     else return rel_exp();
 }
@@ -573,7 +578,7 @@ ast_t* sum_exp(){
         get_next_token();
         return create_ast_exp_operation(PLUS_OPERATION, &ast_exp->data->exp, &sum_exp()->data->exp);
     }
-    else if (current_token.value == DELIMETER_MINUS){
+    else if (current_token.type == DELIMETER_MINUS){
         get_next_token();
         return create_ast_exp_operation(MINUS_OPERAION, &ast_exp->data->exp, &sum_exp()->data->exp);
     }
@@ -581,7 +586,6 @@ ast_t* sum_exp(){
 }
 ast_t* mult_exp(){
     ast_t* ast_exp = unary_exp();
-    mult_exp_aux();
     if (current_token.type == DELIMETER_STAR){
         get_next_token();
         return create_ast_exp_operation(MULT_OPERATION, &ast_exp->data->exp, &mult_exp()->data->exp);
@@ -614,19 +618,19 @@ ast_t* assign_exp(){
     {
     case DELIMETER_ASSIGN:
         get_next_token();
-        return create_ast_exp_assign(NORMAL_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+        return create_ast_exp_assign(NORMAL_ASSIGN, &ast_fact->data->exp, &exp_()->data->exp);
     case DELIMETER_PLUS_EQ:
         get_next_token();
-        return create_ast_exp_assign(ADD_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+        return create_ast_exp_assign(ADD_ASSIGN, &ast_fact->data->exp, &exp_()->data->exp);
     case DELIMETER_MINUS_EQ:
         get_next_token();
-        return create_ast_exp_assign(SUB_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+        return create_ast_exp_assign(SUB_ASSIGN, &ast_fact->data->exp, &exp_()->data->exp);
     case DELIMETER_MULT_EQ:
         get_next_token();
-        return create_ast_exp_assign(MULT_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+        return create_ast_exp_assign(MULT_ASSIGN, &ast_fact->data->exp, &exp_()->data->exp);
     case DELIMETER_DIVIDE_EQ:
         get_next_token();
-        return create_ast_exp_assign(DIV_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+        return create_ast_exp_assign(DIV_ASSIGN, &ast_fact->data->exp, &exp_()->data->exp);
     
     default:
         return ast_fact;
@@ -635,43 +639,55 @@ ast_t* assign_exp(){
 ast_t* fact(){
     if (current_token.type == DELIMETER_OPEN_PAR){
         get_next_token();
-        ast_t* ast_exp =  exp();
+        ast_t* ast_exp =  exp_();
         if (current_token.type != DELIMETER_CLOS_PAR) error();
         get_next_token();
         return ast_exp;
     }
-    else if (current_token.type == IDENTIFIER){
-        char* name;
-        strcpy(name, current_token.value);
+    else if (current_token.type == IDENTIFIER || current_token.type == KEYWORD_PUT || current_token.type == KEYWORD_GET){
+        char* name = current_token.value;
         get_next_token();
         ast_t* next = post_id();
         if (next == NULL) return create_ast_exp_member_access(name, NULL);
-        if (next->data->exp.type != MEMBER_ACCESS) sem_err();
-        return create_ast_exp_member_access(name, &next->data->exp.data->member_acces);
+        switch (next->data->exp.type)
+        {
+        case MEMBER_ACCESS:
+            return create_ast_exp_member_access(name, &next->data->exp.data->member_acces);
+        case ARRAY_ACCESS:
+            return create_ast_exp_array_access(name, &next->data->exp);
+        case FNC_CALL_EXP:
+            next->data->exp.data->fnc_call.id = name;
+            return next;
+        default:
+            sem_err();
+        }
     }
     else return const_();
 }
 ast_t* post_id(){
     switch (current_token.type)
     {
-    case DELIMETER_OPEN_PAR:
+    case DELIMETER_OPEN_PAR:{
         arg_list* args = call();
         return create_ast_exp_fnc_call("", args);
-    case DELIMETER_LEFT_BRACKET:
+    }
+    case DELIMETER_LEFT_BRACKET:{
         get_next_token();
-        ast_t* ast_exp = exp();
+        ast_t* ast_exp = exp_();
         if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
         get_next_token();
         return create_ast_exp_array_access("", &ast_exp->data->exp);
-    case DELIMETER_DOT:
+    }
+    case DELIMETER_DOT:{
         get_next_token();
         if (current_token.type != IDENTIFIER) error();
-        char* id; strcpy(id, current_token.value);
+        char* id; id = current_token.value;
         get_next_token();
         ast_t* ast_exp = post_id();
         if (ast_exp == NULL) return create_ast_exp_member_access(id, NULL);
         if (ast_exp->data->exp.type != MEMBER_ACCESS) sem_err();
         return create_ast_exp_member_access(id, &ast_exp->data->exp.data->member_acces);
+    }
     default:
         return NULL;
     }
@@ -685,7 +701,7 @@ arg_list* call(){
 }
 arg_list* args_call(){
     if (current_token.type == DELIMETER_CLOS_PAR) return NULL;
-    ast_t* ast_exp = exp();
+    ast_t* ast_exp = exp_();
     return create_arg_list_node(&ast_exp->data->exp, args_call_list());
 }
 arg_list* args_call_list(){
@@ -696,30 +712,36 @@ arg_list* args_call_list(){
 ast_t* const_(){
     switch (current_token.type)
     {
-    case CHR_LITERAL:
-        char* value; strcpy(value, current_token.value);
+    case CHR_LITERAL:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(CHR_CONST, value);
-    case STR_LITERAL:
-        char* value; strcpy(value, current_token.value);
+        return create_ast_exp_const(CHR_CONST_EXP, value);
+    }
+    case STR_LITERAL:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(STR_CONST, value);
-    case NUMBER_CONST:
-        char* value; strcpy(value, current_token.value);
+        return create_ast_exp_const(STR_CONST_EXP, value);
+    }
+    case NUMBER_CONST:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(INT_CONST, value);
-    case FLOAT_CONST:
-        char* value; strcpy(value, current_token.value);
+        return create_ast_exp_const(INT_CONST_EXP, value);
+    }
+    case FLOAT_CONST:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(FLOAT_CONST, value);
-    case BOOL_TRUE:
-        char* value; strcpy(value, current_token.value);
+        return create_ast_exp_const(FLOAT_CONST_EXP, value);
+    }
+    case BOOL_TRUE:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(TRUE_CONST, value);
-    case BOOL_FALSE:
-        char* value; strcpy(value, current_token.value);
+        return create_ast_exp_const(TRUE_CONST_EXP, value);
+    }
+    case BOOL_FALSE:{
+        char* value; value = current_token.value;
         get_next_token();
-        return create_ast_exp_const(FALSE_CONST, value);
+        return create_ast_exp_const(FALSE_CONST_EXP, value);
+    }
     default:
         error();
     }
