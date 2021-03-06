@@ -183,3 +183,7 @@ str
 chr
 bool
 ```
+
+## grammar inspired from
+
+http://marvin.cs.uidaho.edu/Teaching/CS445/c-Grammar.pdf
