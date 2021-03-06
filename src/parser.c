@@ -329,11 +329,11 @@ ast_t* stmt(){
     case DELIMETER_CURL_OPEN_PAR:
         return complex_stmt();
     default:
-        return exp_stmt();
+        return create_ast_stmt_empty();
     }
 }
 ast_t* exp_stmt(){
-    if (current_token.type != DELIMETER_SEMICOLON) return exp();
+    if (current_token.type != DELIMETER_SEMICOLON) return create_ast_stmt_exp(&exp()->data->exp);
     else {
         get_next_token();
         return NULL;

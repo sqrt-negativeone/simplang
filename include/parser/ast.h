@@ -244,6 +244,7 @@ union _ast_stmt_data_t
     ast_stmt_var_dec var_dec;
     ast_stmt_return return_stmt;
     ast_stmt_break_continue break_continue_stmt;
+    ast_exp_t* exp;
 };
 
 enum _stmt_type
@@ -256,7 +257,9 @@ enum _stmt_type
     VAR_DEC_STMT,
     TYPE_DEC_STMT,
     RETURN_STMT,
-    BREAK_RETURN_STMT
+    BREAK_RETURN_STMT,
+    EXP_STMT,
+    EMPTY
 };
 
 struct _ast_stmt_t
@@ -315,6 +318,16 @@ static ast_t* get_ast_exp_node(exp_type t){
 //statments utilities
 void insert_ast_stmt(ast_t* ast, ast_t* elem){
     ast->data->stmt.next = &elem->data->stmt;
+}
+ast_t* create_ast_stmt_exp(ast_exp_t* exp){
+    ast_t* ast_exp = get_ast_stmt_node(EXP_STMT);
+
+    ast_exp->data->stmt.data->exp = exp;
+    
+    return ast_exp;
+}
+ast_t* create_ast_stmt_empty(){
+    return get_ast_stmt_node(EMPTY);
 }
 for_range_t create_for_range(ast_exp_t* begin, ast_exp_t* end, ast_stmt_t* jump){
     for_range_t range;
