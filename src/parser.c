@@ -363,7 +363,14 @@ ast_t* complex_stmt(){
 ast_t* stmt_list(){
     // if the current token is in the FOLLOW of the stmt_list
     if (current_token.type == DELIMETER_CURL_CLOS_PAR) return NULL;
-    ast_t* ast_stmt = stmt();
+    ast_t* ast_stmt;
+    if (current_token.type == KEYWORD_LET){
+        get_next_token();
+        ast_stmt = var_decl();
+    }
+    else {
+        ast_stmt = stmt();
+    }
     insert_ast_stmt(ast_stmt, stmt_list());
     return ast_stmt;
 }
