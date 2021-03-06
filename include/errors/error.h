@@ -4,4 +4,6 @@
 //report the error and stop the compiler
 void error();
 
+void sem_err();
+
 #endif
