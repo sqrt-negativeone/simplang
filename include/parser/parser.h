@@ -1,65 +1,62 @@
 #ifndef PARSER_H
 #define PARSER_H
+#include "parser/ast.h"
 
-#include <stdbool.h>
-extern void program(); //done
-extern void decl_list(); //done
-extern void decl(); //done
-extern void var_decl(); //done
-extern void var_decl_id(); //done
-extern void var_decl_id_aux(); //done
-extern void var_decl_tail(); //done
-extern void type_spec(); //done
-extern void type_decl(); //done
-extern void var_decl_list(); //done
-extern void fnc_decl(); //done
-extern void fnc_type_spec(); //done
-extern void fnc_args(); //done
-extern void fnc_args_list();// done
-extern void fnc_args_list_aux();//done
-extern void fnc_arg(); //done
-extern void arg_id(); //done
-extern void arg_id_tail(); //done
+extern ast_t* program();
+extern ast_t* decl_list();
+extern ast_t* decl();
+extern ast_t* var_decl();
+extern void var_decl_id(var_dec_data_t* data);
+extern void var_decl_id_aux(var_dec_data_t* data);
+extern void var_decl_tail(ast_t* ast_var_dec);
+extern ast_t* type_decl();
+extern fields_list* field_dec();
+extern fields_list* field_dec_list();
+extern ast_t* fnc_decl();
+extern char* fnc_type_spec();
+extern param_list* fnc_args();
+extern param_list* fnc_args_list();
+extern param_list* fnc_args_list_aux();
+extern param_list* fnc_arg();
+extern void arg_id(var_dec_data_t* data);
+extern void arg_id_tail();
 
-extern void stmt(); //done
-extern void exp_stmt(); // done
-extern void complex_stmt(); //done
-extern void stmt_list(); //done
-extern void if_stmt(); //done
-extern void else_if_stmt(); //done
-extern void else_aux_stmt(); //done
-extern void loop_stmt(); //done
-extern void for_stmt();// done
-extern void while_stmt(); //done
-extern void range(); //done
-extern void range_tail(); //done
-extern void return_stmt();
-extern void return_stmt_tail(); //done
-extern void break_stmt(); //done
-extern void continue_stmt();//one
-extern void switch_stmt();//done
-extern void when_part(); //done
-extern void default_part(); //done
+extern ast_t* stmt();
+extern ast_t* exp_stmt();
+extern ast_t* complex_stmt();
+extern ast_t* stmt_list();
+extern ast_t* if_stmt();
+extern ast_t* else_if_stmt();
+extern ast_t* else_aux_stmt();
+extern ast_t* loop_stmt();
+extern ast_t* for_stmt();
+extern ast_t* while_stmt();
+extern for_range_t range();
+extern ast_t* range_tail();
+extern ast_t* return_stmt();
+extern ast_t* return_stmt_tail();
+extern ast_t* break_stmt();
+extern ast_t* continue_stmt();//one
+extern ast_t* switch_stmt();
+extern when_part_list* when_part();
+extern ast_t* default_part();
 
-extern void exp(); //done
-extern void simple_exp(); //done
-extern void simple_exp_aux(); //done
-extern void and_exp(); // done
-extern void and_exp_aux(); //done
-extern void unary_rel_exp(); //done
-extern void rel_exp(); //done
-extern void rel_exp_tail(); //done
-extern void sum_exp(); //done
-extern void sum_exp_aux(); //done
-extern void mult_exp(); //done
-extern void mult_exp_aux(); //done
-extern void unary_exp(); //done
-extern void fact(); //done
-extern void post_id(); //done
-extern void call(); //done
-extern void args_call(); //done
-extern void args_call_list(); //done
-extern void args_call_list_aux(); //done
-extern void const_();
+extern ast_t* exp();
+extern ast_t* simple_exp();
+extern ast_t* simple_exp_aux();
+extern ast_t* and_exp();
+extern ast_t* and_exp_aux();
+extern ast_t* unary_rel_exp();
+extern ast_t* rel_exp();
+extern ast_t* sum_exp();
+extern ast_t* mult_exp();
+extern ast_t* unary_exp();
+extern ast_t* assign_exp();
+extern ast_t* fact();
+extern ast_t* post_id();
+extern arg_list* call();
+extern arg_list* args_call();
+extern arg_list* args_call_list();
+extern ast_t* const_();
 
 #endif

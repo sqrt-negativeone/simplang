@@ -13,11 +13,15 @@
 //AST for expressions
 typedef enum _exp_type exp_type;
 typedef enum _operation_type operation_type;
+typedef enum _assign_type assign_type;
 typedef struct _ast_exp_t ast_exp_t;
 typedef struct _ast_exp_operation ast_exp_operation;
 typedef struct _ast_exp_member_access ast_exp_member_access;
 typedef struct _ast_exp_fnc_call ast_exp_fnc_call;
 typedef struct _arg_list arg_list;
+typedef enum _const_type const_type;
+typedef struct _ast_exp_const ast_exp_const_t;
+typedef struct _ast_exp_array_access ast_exp_array_access;
 typedef struct _ast_exp_assign ast_exp_assign;
 typedef union _ast_exp_data_t ast_exp_data_t;
 
@@ -26,7 +30,9 @@ enum _exp_type
     ASSING_EXP,
     OPERATION_EXP,
     MEMBER_ACCESS,
-    FNC_CALL_EXP
+    FNC_CALL_EXP,
+    ARRAY_ACCESS,
+    CONST_EXP
 };
 enum _operation_type
 {
@@ -37,11 +43,26 @@ enum _operation_type
     AND_OPERATION,
     OR_OPERATION,
     NOT_OPERATION,
-    REMINDER_OPERATOR
+    REMINDER_OPERATOR,
+    LESS_OPERATION,
+    GREATER_OPERATION,
+    LESS_EQ_OPERATION,
+    GREATER_EQ_OPERATION,
+    EQUAL_OPERATION,
+    DIFF_OPERATION
+};
+enum _assign_type
+{
+    NORMAL_ASSIGN,
+    ADD_ASSIGN,
+    SUB_ASSIGN,
+    MULT_ASSIGN,
+    DIV_ASSIGN
 };
 struct _ast_exp_assign
 {
-    ast_exp_member_access* variable;
+    assign_type type;
+    ast_exp_t* variable;
     ast_exp_t* expression;
 };
 struct _ast_exp_operation
@@ -56,6 +77,12 @@ struct _ast_exp_member_access
     ast_exp_member_access* next;
 };
 
+struct _ast_exp_array_access
+{
+    char* id;
+    ast_exp_t* index;
+};
+
 struct _arg_list
 {
     ast_exp_t* exp;
@@ -68,12 +95,28 @@ struct _ast_exp_fnc_call
     arg_list* args;
 };
 
+enum _const_type
+{
+    INT_CONST,
+    FLOAT_CONST,
+    CHR_CONST,
+    STR_CONST,
+    TRUE_CONST,
+    FALSE_CONST
+};
+struct _ast_exp_const
+{
+    const_type type;
+    char* value;
+};
 union _ast_exp_data_t
 {
     ast_exp_fnc_call fnc_call;
     ast_exp_member_access member_acces;
     ast_exp_operation operation;
     ast_exp_assign assign;
+    ast_exp_array_access array_access;
+    ast_exp_const_t const_type;
 };
 
 struct _ast_exp_t
@@ -97,15 +140,16 @@ typedef union _ast_stmt_data_t ast_stmt_data_t;
 typedef struct _ast_stmt_return ast_stmt_return;
 typedef struct  _ast_stmt_break_continue  ast_stmt_break_continue;
 typedef struct _var_dec_data_t var_dec_data_t;
+typedef struct _for_range for_range_t;
 typedef enum _stmt_type stmt_type;
 typedef struct _ast_stmt_t ast_stmt_t;
 
 struct _param_list
 {
-    char* id;
-    char* type;
+    var_dec_data_t data;
     param_list* next;
 };
+
 
 struct _ast_stmt_fnc_dec
 {
@@ -146,12 +190,16 @@ struct _ast_stmt_if
     ast_stmt_t* else_body;
 };
 
+struct _for_range{
+    ast_exp_t* begin;
+    ast_exp_t* end;
+    ast_exp_t* jump;
+};
+
 struct _ast_stmt_for
 {
     char* it;
-    int begin;
-    int end;
-    int jump;
+    for_range_t range;
     ast_stmt_t* body;
 };
 
@@ -268,14 +316,16 @@ static ast_t* get_ast_exp_node(exp_type t){
 void insert_ast_stmt(ast_t* ast, ast_t* elem){
     ast->data->stmt.next = &elem->data->stmt;
 }
-
-ast_t* create_ast_stmt_for(char* it, int begin, int end, int jump, ast_stmt_t* body){
+for_range_t create_for_range(ast_exp_t* begin, ast_exp_t* end, ast_stmt_t* jump){
+    for_range_t range;
+    range.begin = begin;
+    range.end = end;
+    range.jump = jump;
+}
+ast_t* create_ast_stmt_for(for_range_t range, ast_stmt_t* body){
     ast_t* ast_for = get_ast_stmt_node(FOR_STMT);
 
-    ast_for->data->stmt.data->for_stmt.it = it;
-    ast_for->data->stmt.data->for_stmt.begin = begin;
-    ast_for->data->stmt.data->for_stmt.end = end;
-    ast_for->data->stmt.data->for_stmt.jump = jump;
+    ast_for->data->stmt.data->for_stmt.range = range;
     ast_for->data->stmt.data->for_stmt.body = body;
 
     return ast_for;
@@ -310,11 +360,12 @@ ast_t* create_ast_stmt_switch(ast_exp_member_access* item, when_part_list* when_
     return ast_switch;
 }
 
-ast_t* create_ast_stmt_fnc_dec(char* name, param_list* parameters, ast_stmt_t* body){
+ast_t* create_ast_stmt_fnc_dec(char* name, param_list* parameters, char* return_type, ast_stmt_t* body){
     ast_t* ast_fnc_dec = get_ast_stmt_node(FNC_DEC_STMT);
 
     ast_fnc_dec->data->stmt.data->fnc_dec.name = name;
     ast_fnc_dec->data->stmt.data->fnc_dec.parameters = parameters;
+    ast_fnc_dec->data->stmt.data->fnc_dec.return_type = return_type;
     ast_fnc_dec->data->stmt.data->fnc_dec.body = body;
 
     return ast_fnc_dec;
@@ -327,14 +378,6 @@ ast_t* create_ast_stmt_type_dec(char* name, fields_list* fields){
     ast_type_dec->data->stmt.data->type_dec.fields = fields;
 
     return ast_type_dec;
-}
-var_dec_data_t create_ar_dec_data(char* name, char* type, bool is_array, int size){
-    var_dec_data_t data;
-    data.is_array = is_array;
-    data.name = name;
-    data.size = size;
-    data.type = type;
-    return data;
 }
 ast_t* create_ast_stmt_var_dec(var_dec_data_t data, ast_exp_t* declaration){
     ast_t* ast_var_dec = get_ast_stmt_node(VAR_DEC_STMT);
@@ -360,9 +403,24 @@ ast_t* create_ast_stmt_break_continue_stmt(bool is_break){
 }
 
 //expressions utilities
-ast_t* create_ast_exp_assign(ast_exp_member_access* variable, ast_exp_t* expression){
+ast_t* create_ast_exp_const(const_type type, char* value){
+    ast_t* ast_const = get_ast_exp_node(CONST_EXP);
+
+    ast_const->data->exp.data->const_type.type = type;
+    ast_const->data->exp.data->const_type.value = value;
+
+    return ast_const;
+}
+ast_t* create_ast_exp_array_access(char* id, ast_exp_t* index){
+    ast_t* ast_array_access = get_ast_stmt_node(ARRAY_ACCESS);
+
+    ast_array_access->data->exp.data->array_access.id = id;
+    ast_array_access->data->exp.data->array_access.index = index;
+}
+ast_t* create_ast_exp_assign(assign_type type, ast_exp_t* variable, ast_exp_t* expression){
     ast_t* ast_assign = get_ast_exp_node(ASSING_EXP);
 
+    ast_assign->data->exp.data->assign.type = type;
     ast_assign->data->exp.data->assign.variable = variable;
     ast_assign->data->exp.data->assign.expression = expression;
 
@@ -402,18 +460,32 @@ fields_list* create_field_lists_node(var_dec_data_t data){
     return field;
 }
 
-param_list* create_param_list_node(char* name, char* type){
+param_list* create_param_list_node(var_dec_data_t data){
     param_list* param = CALLOC(param_list);
-    param->id = name;
-    param->type = type;
+    param->data = data;
     return param;
 }
 
-arg_list* create_arg_list_node(ast_exp_t* exp){
+arg_list* create_arg_list_node(ast_exp_t* exp, arg_list* next){
     arg_list* arg = CALLOC(arg_list);
     arg->exp = exp;
+    arg->next = next;
     return arg;
 }
 
+var_dec_data_t create_var_dec_data(char* name, char* type, bool is_array, int size){
+    var_dec_data_t data;
+    data.is_array = is_array;
+    data.name = name;
+    data.size = size;
+    data.type = type;
+    return data;
+}
+when_part_list* create_when_part_list(ast_exp_t* expression, ast_stmt_t* body){
+    when_part_list* when_part = CALLOC(when_part_list);
+    when_part->body = body;
+    when_part->expression = expression;
+    return when_part;
+}
 #undef CALLOC
 #endif

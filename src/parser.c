@@ -3,252 +3,403 @@
 #include "lexer/lexer.h"
 #include "errors/error.h"
 
-void program(){
+#include <string.h>
+
+ast_t* program(){
     get_next_token();
-    decl_list();
+    return decl_list();
 }
 
-void decl_list(){
-    if (current_token.type == EOFF) return;
-    decl();
-    decl_list();
+ast_t* decl_list(){
+    ast_t* ast = NULL;
+    if (current_token.type == EOFF) return ast;
+    ast = decl();
+    insert_ast_stmt(ast, decl_list());
+    return ast;
 }
-void decl(){
+ast_t* decl(){
     switch (current_token.type)
     {
     case KEYWORD_TYPE:
-        type_decl();
-        break;
+        return type_decl();
     case KEYWORD_FNC:
-        fnc_decl();
-        break;
-    case IDENTIFIER:
-        var_decl();
-        break;
+        return fnc_decl();
+    case KEYWORD_LET:
+        get_next_token();
+        return var_decl();
     default:
         error();
     }
+    return NULL;
 }
 
-void var_decl(){
-    var_decl_id();
+ast_t* var_decl(){
+    var_dec_data_t data;
+    var_decl_id(&data);
     if (current_token.type != DELIMETER_COLON) error();
     get_next_token();
-    type_spec();
-    var_decl_tail();
+    switch (current_token.type)
+    {
+    case KEYWORD_INT:
+        data.type = "int";
+        get_next_token();
+        break;
+    case KEYWORD_FLOAT:
+        data.type = "float";
+        get_next_token();
+        break;
+    case KEYWORD_STR:
+        data.type = "str";
+        get_next_token();
+        break;
+    case KEYWORD_CHR:
+        data.type = "chr";
+        get_next_token();
+        break;
+    case KEYWORD_BOOL:
+        data.type = "bool";
+        get_next_token();
+        break;
+    case IDENTIFIER:
+        memcpy(data.type, current_token.value, strlen(current_token.value));
+        get_next_token();
+        break;
+    default:
+        error();
+        break;
+    }
+    ast_t* ast_var_dec = create_ast_stmt_var_dec(data , NULL);
+    var_decl_tail(ast_var_dec);
+    return ast_var_dec;
 }
 
-void var_decl_id(){
+void var_decl_id(var_dec_data_t* data){
     if (current_token.type != IDENTIFIER) error();
+    strcpy(data->name, current_token.value);
     get_next_token();
-    var_decl_id_aux();
+    var_decl_id_aux(data);
 }
 
-void var_decl_id_aux(){
+void var_decl_id_aux(var_dec_data_t* data){
     if (current_token.type != DELIMETER_LEFT_BRACKET) return;
     get_next_token();
     if (current_token.type != NUMBER_CONST) error();
+    data->is_array = true;
+    data->size = atoi(current_token.value);
     get_next_token();
     if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
     get_next_token();
 }
-void var_decl_tail(){
+void var_decl_tail(ast_t* ast_var_dec){
     if (current_token.type == DELIMETER_SEMICOLON) {
         get_next_token();
         return;
     }
     if (current_token.type == DELIMETER_ASSIGN){
         get_next_token();
-        simple_exp();
+        ast_var_dec->data->stmt.data->var_dec.declaration = &simple_exp()->data->exp;
         if (current_token.type != DELIMETER_SEMICOLON) error();
         get_next_token();
     }
     else error();
 }
 
-void type_spec(){
+ast_t* typedec(){
+    ast_t* ast_node = create_ast_stmt_type_dec("", NULL);
+    if (current_token.type != KEYWORD_TYPE) error();
+    get_next_token();
+    if (current_token.type != IDENTIFIER) error();
+    strcpy(ast_node->data->stmt.data->type_dec.name, current_token.value);
+    get_next_token();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    get_next_token();
+    fields_list* fields = var_decl();
+    fields->next = var_decl_list();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    get_next_token();
+    if (current_token.type != DELIMETER_SEMICOLON) error();
+    get_next_token();
+    ast_node->data->stmt.data->type_dec.fields = fields;
+    return ast_node;
+}
+fields_list* field_dec(){
+    var_dec_data_t data;
+    var_decl_id(&data);
+    if (current_token.type != DELIMETER_COLON) error();
+    get_next_token();
     switch (current_token.type)
     {
-    case NUMBER_CONST:
-    case FLOAT_CONST:
-    case CHR_LITERAL:
-    case STR_LITERAL:
-    case BOOL_FALSE:
-    case BOOL_TRUE:
+    case KEYWORD_INT:
+        data.type = "int";
+        get_next_token();
+        break;
+    case KEYWORD_FLOAT:
+        data.type = "float";
+        get_next_token();
+        break;
+    case KEYWORD_STR:
+        data.type = "str";
+        get_next_token();
+        break;
+    case KEYWORD_CHR:
+        data.type = "chr";
+        get_next_token();
+        break;
+    case KEYWORD_BOOL:
+        data.type = "bool";
+        get_next_token();
+        break;
     case IDENTIFIER:
+        memcpy(data.type, current_token.value, strlen(current_token.value));
         get_next_token();
         break;
     default:
         error();
         break;
     }
+    if (current_token.type != DELIMETER_SEMICOLON) error();
+    fields_list* field = create_field_lists_node(data);
+    return field;
 }
 
-void typedec(){
-    if (current_token.type != KEYWORD_TYPE) error();
-    get_next_token();
-    if (current_token.type != IDENTIFIER) error();
-    get_next_token();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
-    get_next_token();
-    var_decl();
-    var_decl_list();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
-    get_next_token();
-    if (current_token.type != DELIMETER_SEMICOLON) error();
-    get_next_token();
+fields_list* field_dec_list(){
+    if (current_token.type == DELIMETER_CURL_CLOS_PAR) return NULL;
+    fields_list* root = field_dec();
+    root->next = field_dec_list();
+    return root;
 }
-void var_decl_list(){
+ast_t* var_decl_list(){
     if (current_token.type != IDENTIFIER) return;
     var_decl();
     var_decl_list();
 }
 
-void fnc_decl(){
+ast_t* fnc_decl(){
     if (current_token.type != KEYWORD_FNC) error();
     get_next_token();
     if (current_token.type != IDENTIFIER) error();
+    char* name; strcpy(name, current_token.value);
     get_next_token();
     if (current_token.type != DELIMETER_OPEN_PAR) error();
     get_next_token();
-    fnc_args();
+    param_list* params = fnc_args();
     if (current_token.type != DELIMETER_CLOS_PAR) error();
     get_next_token();
     if (current_token.type != DELIMETER_COLON) error();
     get_next_token();
-    fnc_type_spec();
-    stmt();
+    char* return_type = fnc_type_spec();
+    ast_t* body = stmt();
+    return create_ast_stmt_fnc_dec(name,params,return_type, body);
 }
 
-void fnc_type_spec(){
+char* fnc_type_spec(){
     if (current_token.type == KEYWORD_VOID){
         get_next_token();
-        return;
+        return "void";
     }
-    else type_spec();
+    else {
+        char* data;
+        switch (current_token.type)
+        {
+        case KEYWORD_INT:
+            data = "int";
+            get_next_token();
+            break;
+        case KEYWORD_FLOAT:
+            data = "float";
+            get_next_token();
+            break;
+        case KEYWORD_STR:
+            data = "str";
+            get_next_token();
+            break;
+        case KEYWORD_CHR:
+            data = "chr";
+            get_next_token();
+            break;
+        case KEYWORD_BOOL:
+            data = "bool";
+            get_next_token();
+            break;
+        case IDENTIFIER:
+            memcpy(data, current_token.value, strlen(current_token.value));
+            get_next_token();
+            break;
+        default:
+            error();
+            break;
+        }
+        return data;
+    }
 }
 
-void fnc_args(){
+param_list* fnc_args(){
     switch (current_token.type)
     {
     case IDENTIFIER:
-        fnc_args_list();
+        return fnc_args_list();
         break;
     case KEYWORD_VOID:
         get_next_token();
-        return;
+        return NULL;
     default:
-        break;
+        return NULL;
     }
 }
-void fnc_args_list(){
-    fnc_arg();
-    fnc_args_list_aux();
+param_list* fnc_args_list(){
+    param_list* root = fnc_arg();
+    root->next = fnc_args_list_aux();
+    return root;
 }
 
-void fnc_args_list_aux(){
+param_list* fnc_args_list_aux(){
     if (current_token.type != DELIMETER_COMMA) return;
     get_next_token();
-    fnc_arg();
-    fnc_args_list_aux();
+    param_list* node = fnc_arg();
+    node->next = fnc_args_list_aux();
+    return node;
 }
 
-void fnc_arg(){
-    arg_id();
+param_list* fnc_arg(){
+    var_dec_data_t data;
+    arg_id(&data);
     if (current_token.type != DELIMETER_SEMICOLON) error();
     get_next_token();
-    type_spec();
+    switch (current_token.type)
+    {
+    case KEYWORD_INT:
+        data.type = "int";
+        get_next_token();
+        break;
+    case KEYWORD_FLOAT:
+        data.type = "float";
+        get_next_token();
+        break;
+    case KEYWORD_STR:
+        data.type = "str";
+        get_next_token();
+        break;
+    case KEYWORD_CHR:
+        data.type = "chr";
+        get_next_token();
+        break;
+    case KEYWORD_BOOL:
+        data.type = "bool";
+        get_next_token();
+        break;
+    case IDENTIFIER:
+        memcpy(data.type, current_token.value, strlen(current_token.value));
+        get_next_token();
+        break;
+    default:
+        error();
+        break;
+    }
+    return create_param_list_node(data);
 }
-void arg_id(){
+void arg_id(var_dec_data_t* data){
     if (current_token.type != IDENTIFIER) error();
+    strcpy(data->name, current_token.value);
     get_next_token();
-    arg_id_tail();
+    arg_id_tail(data);
 }
-void arg_id_tail(){
+void arg_id_tail(var_dec_data_t* data){
     if (current_token.type != DELIMETER_LEFT_BRACKET) return;
+    data->is_array = true;
+    data->size = 0;
     get_next_token();
     if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
 }
-void stmt(){
+ast_t* stmt(){
     switch (current_token.type)
     {
     case KEYWORD_IF:
-        if_stmt();
-        break;
+        return if_stmt();
     case KEYWORD_FOR:
     case KEYWORD_WHILE:
-        loop_stmt();
-        break;
+        return loop_stmt();
     case KEYWORD_SWITCH:
-        switch_stmt();
-        break;
+        return switch_stmt();
     case KEYWORD_RETURN:
-        return_stmt();
-        break;
+        return return_stmt();
     case KEYWORD_BREAK:
-        break_stmt();
-        break;
+        return break_stmt();
     case KEYWORD_CONTINUE:
-        continue_stmt();
-        break;
+        return continue_stmt();
     case DELIMETER_CURL_OPEN_PAR:
-        complex_stmt();
-        break;
+        return complex_stmt();
     default:
-        exp_stmt();
-        break;
+        return exp_stmt();
     }
 }
-void exp_stmt(){
-    if (current_token.type != DELIMETER_SEMICOLON) exp();
-    else get_next_token();
+ast_t* exp_stmt(){
+    if (current_token.type != DELIMETER_SEMICOLON) return exp();
+    else {
+        get_next_token();
+        return NULL;
+    }
 }
-void complex_stmt(){
+ast_t* complex_stmt(){
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
     get_next_token();
-    var_decl();
-    stmt_list();
+    ast_t* ast_stmt = NULL;
+    if (current_token.type == KEYWORD_LET){
+        get_next_token();
+        ast_stmt = var_decl();
+    }
+    ast_t* stmt_next = stmt_list();
+    if (ast_stmt == NULL){
+        ast_stmt = stmt_next;
+    }
+    else{
+        insert_ast_stmt(ast_stmt, stmt_next);
+    }
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
     get_next_token();
+    return ast_stmt;
 }
-void stmt_list(){
+ast_t* stmt_list(){
     // if the current token is in the FOLLOW of the stmt_list
     if (current_token.type == DELIMETER_CURL_CLOS_PAR) return;
-    stmt();
-    stmt_list();
+    ast_t* ast_stmt = stmt();
+    insert_ast_stmt(ast_stmt, stmt_list());
+    return ast_stmt;
 }
 
-void if_stmt(){
+ast_t* if_stmt(){
     if (current_token.type != KEYWORD_IF) error();
     get_next_token();
-    simple_exp();
+    ast_t* condition = simple_exp();
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
-    stmt();
+    ast_t* body = stmt();
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
     get_next_token();
-    else_if_stmt();
+    ast_t* else_body = else_if_stmt();
+    return create_ast_stmt_if(&condition->data->exp, &body->data->stmt, &else_body->data->stmt);
 }
 
-void else_if_stmt(){
-    if (current_token.type != KEYWORD_ELSE) return;
+ast_t* else_if_stmt(){
+    if (current_token.type != KEYWORD_ELSE) return NULL;
     get_next_token();
-    else_aux_stmt();
+    return else_aux_stmt();
 }
-void else_aux_stmt(){
+ast_t* else_aux_stmt(){
     if (current_token.type == DELIMETER_CURL_OPEN_PAR){
         get_next_token();
-        stmt();
+        ast_t* body = stmt();
         if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
         get_next_token();
+        return body;
     }
-    else if_stmt();
+    else return if_stmt();
 }
-void loop_stmt(){
-    if (current_token.type == KEYWORD_FOR) for_stmt();
-    else if (current_token.type == KEYWORD_WHILE) while_stmt();
+ast_t* loop_stmt(){
+    if (current_token.type == KEYWORD_FOR) return for_stmt();
+    else if (current_token.type == KEYWORD_WHILE) return while_stmt();
     else error();
+    return NULL;
 }
-void for_stmt(){
+ast_t* for_stmt(){
     get_next_token();
     if (current_token.type != IDENTIFIER) error();
     get_next_token();
@@ -260,7 +411,7 @@ void for_stmt(){
     get_next_token();
 }
 
-void while_stmt(){
+ast_t* while_stmt(){
     get_next_token();
     simple_exp();
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
@@ -269,223 +420,308 @@ void while_stmt(){
     get_next_token();
 }
 
-void range(){
+for_range_t range(){
     if (current_token.type == DELIMETER_COLON){
         get_next_token();
-        simple_exp();
+        ast_t* begin = simple_exp();
         if (current_token.type != KEYWORD_TO) error();
         get_next_token();
-        simple_exp();
-        range_tail();
+        ast_t* end = simple_exp();
+        ast_t* jump = range_tail();
+
+        return create_for_range(
+                &begin->data->exp, 
+                &end->data->exp,
+                ((jump == NULL)? jump : &jump->data->exp)
+            );
     }
     else error();
 }
-void range_tail(){
-    if (current_token.type != KEYWORD_JUMP) return;
+ast_t* range_tail(){
+    if (current_token.type != KEYWORD_JUMP) return NULL;
     get_next_token();
-    simple_exp();
+    return simple_exp();
 }
 
-void return_stmt(){
+ast_t* return_stmt(){
     get_next_token();
-    return_stmt_tail();
+    return return_stmt_tail();
 }
-void return_stmt_tail(){
-    if (current_token.type == DELIMETER_SEMICOLON) get_next_token();
+ast_t* return_stmt_tail(){
+    if (current_token.type == DELIMETER_SEMICOLON){
+        get_next_token();
+        return create_ast_stmt_return_stmt(NULL);
+    }
     else {
-        exp();
+        ast_t* ast_stmt = exp();
         if (current_token.type != DELIMETER_SEMICOLON) error();
+        get_next_token();
+        return create_ast_stmt_return_stmt(&ast_stmt->data->exp);
     }
 }
-void break_stmt(){
+ast_t* break_stmt(){
     get_next_token();
     if (current_token.type != DELIMETER_SEMICOLON) error();
+    return create_ast_stmt_break_continue_stmt(true);
 }
 
-void continue_stmt(){
+ast_t* continue_stmt(){
     get_next_token();
     if (current_token.type != DELIMETER_SEMICOLON) error();
+    return create_ast_stmt_break_continue_stmt(false);
 }
-void switch_stmt(){
+ast_t* switch_stmt(){
     get_next_token();
-    simple_exp();
+    ast_t* item = simple_exp();
     if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
-    when_part();
-    default_part();
+    when_part_list* when_lit = when_part();
+    ast_t* ast_default_part = default_part();
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    return create_ast_stmt_switch(item, when_lit, ast_default_part);
 }
-void when_part(){
+when_part_list* when_part(){
     if (current_token.type != KEYWORD_WHEN) return;
     get_next_token();
-    simple_exp();
+    ast_t* expression = simple_exp();
     if (current_token.type != DELIMETER_COLON) error();
     get_next_token();
-    stmt();
-    when_part();
+    ast_t* body = stmt();
+    when_part_list* when_list = create_when_part_list(&expression->data->exp, &body->data->stmt);
+    when_list->next = when_part();
+    return when_list;
 }
-void default_part(){
-    if (current_token.type != KEYWORD_DEFAULT) return;
+ast_t* default_part(){
+    if (current_token.type != KEYWORD_DEFAULT) return NULL;
     get_next_token();
-    stmt();
+    return stmt();
 }
 
-void exp(){
-    simple_exp();
+ast_t* exp(){
+    return simple_exp();
 }
 
-void simple_exp(){
-    and_exp();
-    simple_exp_aux();
+ast_t* simple_exp(){
+    ast_t* ast_exp = and_exp();
+    ast_t* tail_exp = simple_exp_aux();
+    if (tail_exp == NULL){
+        return ast_exp;
+    }
+    else {
+        return create_ast_exp_operation(OR_OPERATION, &ast_exp->data->exp, &tail_exp->data->exp);
+    }
 }
 
-void simple_exp_aux(){
-    if (current_token.type != KEYWORD_OR) return;
+ast_t* simple_exp_aux(){
+    if (current_token.type != KEYWORD_OR) return NULL;
     get_next_token();
-    and_exp();
-    simple_exp_aux();
+    return simple_exp();
 }
 
-void and_exp(){
-    unary_rel_exp();
-    and_exp_aux();
+ast_t* and_exp(){
+    ast_t* ast_exp = unary_rel_exp();
+    ast_t* tail_exp = and_exp_aux();
+    if (tail_exp == NULL) return ast_exp;
+    else {
+        return create_ast_exp_operation(AND_OPERATION, &ast_exp->data->exp, &tail_exp->data->exp);
+    }
 }
-void and_exp_aux(){
-    if (current_token.type != KEYWORD_AND) return;
+ast_t* and_exp_aux(){
+    if (current_token.type != KEYWORD_AND) return NULL;
     get_next_token();
-    unary_rel_exp();
-    and_exp_aux();
+    return and_exp();
 }
-void unary_rel_exp(){
+ast_t* unary_rel_exp(){
     if (current_token.type == KEYWORD_NOT){
         get_next_token();
-        unary_rel_exp();
+        ast_t* ast_exp = unary_rel_exp();
+        return create_ast_exp_operati(NOT_OPERATION, NULL, ast_exp);
     }
-    else rel_exp();
+    else return rel_exp();
 }
-void rel_exp(){
-    sum_exp();
-    rel_exp_tail();
-}
-void rel_exp_tail(){
+ast_t* rel_exp(){
+    ast_t* ast_exp = sum_exp();
+    ast_t* tail_exp = NULL;
+
     switch (current_token.type)
     {
     case DELIMETER_LESS_EQ:
+        get_next_token();
+        return create_ast_exp_operation(LESS_EQ_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
     case DELIMETER_LESS:
+        get_next_token();
+        return create_ast_exp_operation(LESS_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
     case DELIMETER_GREATER:
+        get_next_token();
+        return create_ast_exp_operation(GREATER_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
     case DELIMETER_GREATER_EQ:
+        get_next_token();
+        return create_ast_exp_operation(GREATER_EQ_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
     case DELIMETER_EQUAL:
+        get_next_token();
+        return create_ast_exp_operation(EQUAL_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
     case DELEMTER_NOT_EQUAL:
         get_next_token();
-        sum_exp();
-        rel_exp_tail();
+        return create_ast_exp_operation(DIFF_OPERATION, &ast_exp->data->exp, &rel_exp()->data->exp);
         break;
-    
     default:
-        return;
+        return ast_exp;
     }
 }
-void sum_exp(){
-    mult_exp();
-    sum_exp_aux();
+ast_t* sum_exp(){
+    ast_t* ast_exp = mult_exp();
+    if (current_token.type == DELIMETER_PLUS){
+        get_next_token();
+        return create_ast_exp_operation(PLUS_OPERATION, &ast_exp->data->exp, &sum_exp()->data->exp);
+    }
+    else if (current_token.value == DELIMETER_MINUS){
+        get_next_token();
+        return create_ast_exp_operation(MINUS_OPERAION, &ast_exp->data->exp, &sum_exp()->data->exp);
+    }
+    else return ast_exp;
 }
-void sum_exp_aux(){
-    if (current_token.type != DELIMETER_PLUS && current_token.type != DELIMETER_MINUS ) return;
-    get_next_token();
-    mult_exp();
-    sum_exp_aux();
-}
-void mult_exp(){
-    unary_exp();
+ast_t* mult_exp(){
+    ast_t* ast_exp = unary_exp();
     mult_exp_aux();
-}
-void mult_exp_aux(){
-    if (current_token.type != DELIMETER_STAR &&
-        current_token.type != DELIMETER_SLASH &&
-        current_token.type != DELIMETER_PERCENTAGE
-    ) return;
-    get_next_token();
-    mult_exp();
+    if (current_token.type == DELIMETER_STAR){
+        get_next_token();
+        return create_ast_exp_operation(MULT_OPERATION, &ast_exp->data->exp, &mult_exp()->data->exp);
+    }
+    else if (current_token.type == DELIMETER_SLASH){
+        get_next_token();
+        return create_ast_exp_operation(DIV_OPERATION, &ast_exp->data->exp, &mult_exp()->data->exp);
+    }
+    else if (current_token.type == DELIMETER_PERCENTAGE){
+        get_next_token();
+        return create_ast_exp_operation(REMINDER_OPERATOR, &ast_exp->data->exp, &mult_exp()->data->exp);
+    }
+    else return ast_exp;
 }
 
-void unary_exp(){
-    if (current_token.type != DELIMETER_PLUS &&
-        current_token.type != DELIMETER_MINUS &&
-        current_token.type != DELIMETER_QUESTION_MARK
-    ) fact();
-    else{
+ast_t* unary_exp(){
+    if (current_token.type == DELIMETER_PLUS){
         get_next_token();
-        unary_exp();
+        return create_ast_exp_operation(PLUS_OPERATION, NULL, &unary_exp()->data->exp);
+    }
+    else if (current_token.type == DELIMETER_MINUS){
+        get_next_token();
+        return create_ast_exp_operation(MINUS_OPERAION, NULL, &unary_exp()->data->exp);
+    }
+    else return assign_exp();
+}
+ast_t* assign_exp(){
+    ast_t* ast_fact = fact();
+    switch (current_token.type)
+    {
+    case DELIMETER_ASSIGN:
+        get_next_token();
+        return create_ast_exp_assign(NORMAL_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+    case DELIMETER_PLUS_EQ:
+        get_next_token();
+        return create_ast_exp_assign(ADD_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+    case DELIMETER_MINUS_EQ:
+        get_next_token();
+        return create_ast_exp_assign(SUB_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+    case DELIMETER_MULT_EQ:
+        get_next_token();
+        return create_ast_exp_assign(MULT_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+    case DELIMETER_DIVIDE_EQ:
+        get_next_token();
+        return create_ast_exp_assign(DIV_ASSIGN, &ast_fact->data->exp, &exp()->data->exp);
+    
+    default:
+        return ast_fact;
     }
 }
-void fact(){
+ast_t* fact(){
     if (current_token.type == DELIMETER_OPEN_PAR){
         get_next_token();
-        exp();
+        ast_t* ast_exp =  exp();
         if (current_token.type != DELIMETER_CLOS_PAR) error();
         get_next_token();
+        return ast_exp;
     }
     else if (current_token.type == IDENTIFIER){
+        char* name;
+        strcpy(name, current_token.value);
         get_next_token();
-        post_id();
+        ast_t* next = post_id();
+        if (next == NULL) return create_ast_exp_member_access(name, NULL);
+        if (next->data->exp.type != MEMBER_ACCESS) sem_err();
+        return create_ast_exp_member_access(name, &next->data->exp.data->member_acces);
     }
-    else const_();
+    else return const_();
 }
-void post_id(){
+ast_t* post_id(){
     switch (current_token.type)
     {
     case DELIMETER_OPEN_PAR:
-        call();
-        break;
+        arg_list* args = call();
+        return create_ast_exp_fnc_call("", args);
     case DELIMETER_LEFT_BRACKET:
         get_next_token();
-        exp();
+        ast_t* ast_exp = exp();
         if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
         get_next_token();
-        break;
+        return create_ast_exp_array_access("", &ast_exp->data->exp);
     case DELIMETER_DOT:
         get_next_token();
         if (current_token.type != IDENTIFIER) error();
+        char* id; strcpy(id, current_token.value);
         get_next_token();
-        post_id();
-        break;
-    case DELIMETER_ASSIGN:
-        get_next_token();
-        exp();
-        break;
+        ast_t* ast_exp = post_id();
+        if (ast_exp == NULL) return create_ast_exp_member_access(id, NULL);
+        if (ast_exp->data->exp.type != MEMBER_ACCESS) sem_err();
+        return create_ast_exp_member_access(id, &ast_exp->data->exp.data->member_acces);
     default:
-        return;
+        return NULL;
     }
 }
-void call(){
+arg_list* call(){
     get_next_token();
-    args_call();
+    arg_list* args = args_call();
     if (current_token.type != DELIMETER_CLOS_PAR) error();
     get_next_token();
+    return args;
 }
-void args_call(){
-    if (current_token.type == DELIMETER_CLOS_PAR) return;
-    args_call_list();
+arg_list* args_call(){
+    if (current_token.type == DELIMETER_CLOS_PAR) return NULL;
+    ast_t* ast_exp = exp();
+    return create_arg_list_node(&ast_exp->data->exp, args_call_list());
 }
-void args_call_list(){
-    exp();
-    args_call_list_aux();
-}
-
-void args_call_list_aux(){
-    if (current_token.type != DELIMETER_COMMA) return;
+arg_list* args_call_list(){
+    if (current_token.type != DELIMETER_COMMA) return NULL;
     get_next_token();
-    args_call_list();
+    return args_call();
 }
-void const_(){
-    if (current_token.type == CHR_LITERAL ||
-        current_token.type == STR_LITERAL ||
-        current_token.type == NUMBER_CONST ||
-        current_token.type == FLOAT_CONST ||
-        current_token.type == BOOL_TRUE ||
-        current_token.type == BOOL_FALSE
-    ){
+ast_t* const_(){
+    switch (current_token.type)
+    {
+    case CHR_LITERAL:
+        char* value; strcpy(value, current_token.value);
         get_next_token();
-        return;
+        return create_ast_exp_const(CHR_CONST, value);
+    case STR_LITERAL:
+        char* value; strcpy(value, current_token.value);
+        get_next_token();
+        return create_ast_exp_const(STR_CONST, value);
+    case NUMBER_CONST:
+        char* value; strcpy(value, current_token.value);
+        get_next_token();
+        return create_ast_exp_const(INT_CONST, value);
+    case FLOAT_CONST:
+        char* value; strcpy(value, current_token.value);
+        get_next_token();
+        return create_ast_exp_const(FLOAT_CONST, value);
+    case BOOL_TRUE:
+        char* value; strcpy(value, current_token.value);
+        get_next_token();
+        return create_ast_exp_const(TRUE_CONST, value);
+    case BOOL_FALSE:
+        char* value; strcpy(value, current_token.value);
+        get_next_token();
+        return create_ast_exp_const(FALSE_CONST, value);
+    default:
+        error();
     }
-    error();
+    return NULL;
 }
