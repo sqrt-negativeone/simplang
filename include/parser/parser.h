@@ -41,7 +41,7 @@ extern ast_t* switch_stmt();
 extern when_part_list* when_part();
 extern ast_t* default_part();
 
-extern ast_t* exp();
+extern ast_t* exp_();
 extern ast_t* simple_exp();
 extern ast_t* simple_exp_aux();
 extern ast_t* and_exp();
