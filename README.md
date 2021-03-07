@@ -11,7 +11,7 @@ to compile using cmake run the commands
     
  this will generate the executable file in `./out/build` named `SimpLang`.
  
- to run it, use the command `./ou/build/SimpLang filename` or `./out/build/SimpLang < filename`
+ to run it, use the command `./out/build/SimpLang filename` or `./out/build/SimpLang < filename`
 
 
 ## TODOs list
