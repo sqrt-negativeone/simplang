@@ -260,7 +260,7 @@ param_list* fnc_args_list_aux(){
 param_list* fnc_arg(){
     var_dec_data_t data;
     arg_id(&data);
-    if (current_token.type != DELIMETER_SEMICOLON) error();
+    if (current_token.type != DELIMETER_COLON) error();
     get_next_token();
     switch (current_token.type)
     {
@@ -385,7 +385,8 @@ ast_t* if_stmt(){
     if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
     get_next_token();
     ast_t* else_body = else_if_stmt();
-    return create_ast_stmt_if(&condition->data->exp, &body->data->stmt, &else_body->data->stmt);
+    if (else_body != NULL) return create_ast_stmt_if(&condition->data->exp, &body->data->stmt, &else_body->data->stmt);
+    else return create_ast_stmt_if(&condition->data->exp, &body->data->stmt, NULL);
 }
 
 ast_t* else_if_stmt(){
