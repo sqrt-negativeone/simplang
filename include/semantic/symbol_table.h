@@ -48,6 +48,7 @@ struct _symbol_var_t{
     void* value;
 };
 struct _symbol_fun_t{
+    int parameters_count;
     symbol_var_t* params;
     char* return_type_name;
 };
@@ -57,6 +58,7 @@ struct _type_fields_t{
 };
 struct _symbol_custom_type_t{
     type_fields_t* fields;
+    int fields_count;
 };
 struct _symbol_type_t{
     type_kind_t type;
@@ -91,7 +93,9 @@ struct _vec_symbol_table_t
 
 // insert entry at the back of the symbol table
 bool insert_entry(symbol_entry_t entry);
-
+symbol_entry_t create_variable_entry(char* name, char* type_name, bool is_array, bool is_initialized, void* data);
+symbol_entry_t create_function_entry(char* name, int paramters_count, symbol_var_t* params, char* return_type);
+symbol_entry_t create_type_entry(char* name, type_fields_t* fields, int fields_count);
 
 // scope declarations
 /*
