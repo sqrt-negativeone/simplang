@@ -2,8 +2,8 @@
 #include "lexer/lexer.h"
 #include <stdio.h>
 
-void error(){
-    printf("syntax error at line %d\ntoken : %s\n", current_token.line_no, current_token.value);
+void error(const char* expected){
+    printf("syntax error at line %d\nexpected : \" %s \"\nfound :%s\n", current_token.line_no,expected, current_token.value);
     exit(1);
 }
 

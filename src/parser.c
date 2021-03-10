@@ -12,6 +12,7 @@ ast_t* program(){
 
 ast_t* decl_list(){
     ast_t* ast = NULL;
+    
     if (current_token.type == EOFF) return ast;
     ast = decl();
     insert_ast_stmt(ast, decl_list());
@@ -28,7 +29,7 @@ ast_t* decl(){
         get_next_token();
         return var_decl();
     default:
-        error();
+        error("declaration");
     }
     return NULL;
 }
@@ -36,7 +37,7 @@ ast_t* decl(){
 ast_t* var_decl(){
     var_dec_data_t data;
     var_decl_id(&data);
-    if (current_token.type != DELIMETER_COLON) error();
+    if (current_token.type != DELIMETER_COLON) error(":");
     get_next_token();
     switch (current_token.type)
     {
@@ -65,7 +66,7 @@ ast_t* var_decl(){
         get_next_token();
         break;
     default:
-        error();
+        error("type specifier");
         break;
     }
     ast_t* ast_var_dec = create_ast_stmt_var_dec(data , NULL);
@@ -74,7 +75,7 @@ ast_t* var_decl(){
 }
 
 void var_decl_id(var_dec_data_t* data){
-    if (current_token.type != IDENTIFIER) error();
+    if (current_token.type != IDENTIFIER) error("ID");
     data->name = current_token.value;
     get_next_token();
     var_decl_id_aux(data);
@@ -83,11 +84,11 @@ void var_decl_id(var_dec_data_t* data){
 void var_decl_id_aux(var_dec_data_t* data){
     if (current_token.type != DELIMETER_LEFT_BRACKET) return;
     get_next_token();
-    if (current_token.type != NUMBER_CONST) error();
+    if (current_token.type != NUMBER_CONST) error("constant number");
     data->is_array = true;
     data->size = atoi(current_token.value);
     get_next_token();
-    if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
+    if (current_token.type != DELIMETER_RIGHT_BRACKET) error("]");
     get_next_token();
 }
 void var_decl_tail(ast_t* ast_var_dec){
@@ -98,26 +99,26 @@ void var_decl_tail(ast_t* ast_var_dec){
     if (current_token.type == DELIMETER_ASSIGN){
         get_next_token();
         ast_var_dec->data->stmt.data->var_dec.declaration = &simple_exp()->data->exp;
-        if (current_token.type != DELIMETER_SEMICOLON) error();
+        if (current_token.type != DELIMETER_SEMICOLON) error(";");
         get_next_token();
     }
-    else error();
+    else error("expected ;");
 }
 
 ast_t* type_decl(){
     ast_t* ast_node = create_ast_stmt_type_dec("", NULL);
-    if (current_token.type != KEYWORD_TYPE) error();
+    if (current_token.type != KEYWORD_TYPE) error("type");
     get_next_token();
-    if (current_token.type != IDENTIFIER) error();
+    if (current_token.type != IDENTIFIER) error("ID");
     ast_node->data->stmt.data->type_dec.name = current_token.value;
     get_next_token();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     get_next_token();
     fields_list* fields = field_dec();
     fields->next = field_dec_list();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     get_next_token();
-    if (current_token.type != DELIMETER_SEMICOLON) error();
+    if (current_token.type != DELIMETER_SEMICOLON) error(";");
     get_next_token();
     ast_node->data->stmt.data->type_dec.fields = fields;
     return ast_node;
@@ -125,7 +126,7 @@ ast_t* type_decl(){
 fields_list* field_dec(){
     var_dec_data_t data;
     var_decl_id(&data);
-    if (current_token.type != DELIMETER_COLON) error();
+    if (current_token.type != DELIMETER_COLON) error(":");
     get_next_token();
     switch (current_token.type)
     {
@@ -154,10 +155,10 @@ fields_list* field_dec(){
         get_next_token();
         break;
     default:
-        error();
+        error("type specifier");
         break;
     }
-    if (current_token.type != DELIMETER_SEMICOLON) error();
+    if (current_token.type != DELIMETER_SEMICOLON) error(";");
     get_next_token();
     fields_list* field = create_field_lists_node(data);
     return field;
@@ -172,17 +173,17 @@ fields_list* field_dec_list(){
 
 
 ast_t* fnc_decl(){
-    if (current_token.type != KEYWORD_FNC) error();
+    if (current_token.type != KEYWORD_FNC) error("key word fnc");
     get_next_token();
-    if (current_token.type != IDENTIFIER) error();
+    if (current_token.type != IDENTIFIER) error("ID");
     char* name = current_token.value;
     get_next_token();
-    if (current_token.type != DELIMETER_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_OPEN_PAR) error("{");
     get_next_token();
     param_list* params = fnc_args();
-    if (current_token.type != DELIMETER_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CLOS_PAR) error("}");
     get_next_token();
-    if (current_token.type != DELIMETER_COLON) error();
+    if (current_token.type != DELIMETER_COLON) error(":");
     get_next_token();
     char* return_type = fnc_type_spec();
     ast_t* body = stmt();
@@ -223,7 +224,7 @@ char* fnc_type_spec(){
             get_next_token();
             break;
         default:
-            error();
+            error("type specifier");
             break;
         }
         return data;
@@ -260,7 +261,7 @@ param_list* fnc_args_list_aux(){
 param_list* fnc_arg(){
     var_dec_data_t data;
     arg_id(&data);
-    if (current_token.type != DELIMETER_COLON) error();
+    if (current_token.type != DELIMETER_COLON) error(":");
     get_next_token();
     switch (current_token.type)
     {
@@ -289,13 +290,13 @@ param_list* fnc_arg(){
         get_next_token();
         break;
     default:
-        error();
+        error("type specifier");
         break;
     }
     return create_param_list_node(data);
 }
 void arg_id(var_dec_data_t* data){
-    if (current_token.type != IDENTIFIER) error();
+    if (current_token.type != IDENTIFIER) error("ID");
     data->name = current_token.value;
     get_next_token();
     arg_id_tail(data);
@@ -305,7 +306,7 @@ void arg_id_tail(var_dec_data_t* data){
     data->is_array = true;
     data->size = 0;
     get_next_token();
-    if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
+    if (current_token.type != DELIMETER_RIGHT_BRACKET) error("]");
 }
 ast_t* stmt(){
     switch (current_token.type)
@@ -332,7 +333,7 @@ ast_t* stmt(){
 ast_t* exp_stmt(){
     if (current_token.type != DELIMETER_SEMICOLON) {
         ast_t* exp_stmt = create_ast_stmt_exp(&exp_()->data->exp);
-        if (current_token.type != DELIMETER_SEMICOLON) error();
+        if (current_token.type != DELIMETER_SEMICOLON) error(";");
         get_next_token();
         return exp_stmt;
     }
@@ -342,7 +343,7 @@ ast_t* exp_stmt(){
     }
 }
 ast_t* complex_stmt(){
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     get_next_token();
     ast_t* ast_stmt = NULL;
     if (current_token.type == KEYWORD_LET){
@@ -356,7 +357,7 @@ ast_t* complex_stmt(){
     else{
         insert_ast_stmt(ast_stmt, stmt_next);
     }
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     get_next_token();
     return ast_stmt;
 }
@@ -376,13 +377,13 @@ ast_t* stmt_list(){
 }
 
 ast_t* if_stmt(){
-    if (current_token.type != KEYWORD_IF) error();
+    if (current_token.type != KEYWORD_IF) error("keyword if");
     get_next_token();
     ast_t* condition = simple_exp();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     get_next_token();
     ast_t* body = stmt();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     get_next_token();
     ast_t* else_body = else_if_stmt();
     if (else_body != NULL) return create_ast_stmt_if(&condition->data->exp, &body->data->stmt, &else_body->data->stmt);
@@ -398,7 +399,7 @@ ast_t* else_aux_stmt(){
     if (current_token.type == DELIMETER_CURL_OPEN_PAR){
         get_next_token();
         ast_t* body = stmt();
-        if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+        if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
         get_next_token();
         return body;
     }
@@ -407,27 +408,27 @@ ast_t* else_aux_stmt(){
 ast_t* loop_stmt(){
     if (current_token.type == KEYWORD_FOR) return for_stmt();
     else if (current_token.type == KEYWORD_WHILE) return while_stmt();
-    else error();
+    else error("loop statement");
     return NULL;
 }
 ast_t* for_stmt(){
     get_next_token();
-    if (current_token.type != IDENTIFIER) error();
+    if (current_token.type != IDENTIFIER) error("ID");
     get_next_token();
     range();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     get_next_token();
     stmt();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     get_next_token();
 }
 
 ast_t* while_stmt(){
     get_next_token();
     simple_exp();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     stmt();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     get_next_token();
 }
 
@@ -435,7 +436,7 @@ for_range_t range(){
     if (current_token.type == DELIMETER_COLON){
         get_next_token();
         ast_t* begin = simple_exp();
-        if (current_token.type != KEYWORD_TO) error();
+        if (current_token.type != KEYWORD_TO) error("to");
         get_next_token();
         ast_t* end = simple_exp();
         ast_t* jump = range_tail();
@@ -446,7 +447,7 @@ for_range_t range(){
                 ((jump == NULL)? NULL : (&jump->data->exp))
             );
     }
-    else error();
+    else error(":");
 }
 ast_t* range_tail(){
     if (current_token.type != KEYWORD_JUMP) return NULL;
@@ -465,38 +466,38 @@ ast_t* return_stmt_tail(){
     }
     else {
         ast_t* ast_stmt = exp_();
-        if (current_token.type != DELIMETER_SEMICOLON) error();
+        if (current_token.type != DELIMETER_SEMICOLON) error(";");
         get_next_token();
         return create_ast_stmt_return_stmt(&ast_stmt->data->exp);
     }
 }
 ast_t* break_stmt(){
     get_next_token();
-    if (current_token.type != DELIMETER_SEMICOLON) error();
+    if (current_token.type != DELIMETER_SEMICOLON) error(";");
     get_next_token();
     return create_ast_stmt_break_continue_stmt(true);
 }
 
 ast_t* continue_stmt(){
     get_next_token();
-    if (current_token.type != DELIMETER_SEMICOLON) error();
+    if (current_token.type != DELIMETER_SEMICOLON) error(";");
     get_next_token();
     return create_ast_stmt_break_continue_stmt(false);
 }
 ast_t* switch_stmt(){
     get_next_token();
     ast_t* item = simple_exp();
-    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error();
+    if (current_token.type != DELIMETER_CURL_OPEN_PAR) error("{");
     when_part_list* when_lit = when_part();
     ast_t* ast_default_part = default_part();
-    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CURL_CLOS_PAR) error("}");
     return create_ast_stmt_switch(&item->data->exp,when_lit, &ast_default_part->data->stmt);
 }
 when_part_list* when_part(){
     if (current_token.type != KEYWORD_WHEN) return NULL;
     get_next_token();
     ast_t* expression = simple_exp();
-    if (current_token.type != DELIMETER_COLON) error();
+    if (current_token.type != DELIMETER_COLON) error(":");
     get_next_token();
     ast_t* body = stmt();
     when_part_list* when_list = create_when_part_list(&expression->data->exp, &body->data->stmt);
@@ -648,7 +649,7 @@ ast_t* fact(){
     if (current_token.type == DELIMETER_OPEN_PAR){
         get_next_token();
         ast_t* ast_exp =  exp_();
-        if (current_token.type != DELIMETER_CLOS_PAR) error();
+        if (current_token.type != DELIMETER_CLOS_PAR) error(")");
         get_next_token();
         return ast_exp;
     }
@@ -682,13 +683,13 @@ ast_t* post_id(){
     case DELIMETER_LEFT_BRACKET:{
         get_next_token();
         ast_t* ast_exp = exp_();
-        if (current_token.type != DELIMETER_RIGHT_BRACKET) error();
+        if (current_token.type != DELIMETER_RIGHT_BRACKET) error("]");
         get_next_token();
         return create_ast_exp_array_access("", &ast_exp->data->exp);
     }
     case DELIMETER_DOT:{
         get_next_token();
-        if (current_token.type != IDENTIFIER) error();
+        if (current_token.type != IDENTIFIER) error("ID");
         char* id; id = current_token.value;
         get_next_token();
         ast_t* ast_exp = post_id();
@@ -703,7 +704,7 @@ ast_t* post_id(){
 arg_list* call(){
     get_next_token();
     arg_list* args = args_call();
-    if (current_token.type != DELIMETER_CLOS_PAR) error();
+    if (current_token.type != DELIMETER_CLOS_PAR) error(")");
     get_next_token();
     return args;
 }
@@ -751,7 +752,7 @@ ast_t* const_(){
         return create_ast_exp_const(FALSE_CONST_EXP, value);
     }
     default:
-        error();
+        error("constant literal");
     }
     return NULL;
 }
