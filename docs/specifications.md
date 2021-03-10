@@ -187,3 +187,14 @@ bool
 ## grammar inspired from
 
 http://marvin.cs.uidaho.edu/Teaching/CS445/c-Grammar.pdf
+
+## semantics rules
+
+* Each expression returns a value
+* conversions between int and float are allowed
+* conversions between int and bool is allowed, 0 is false and all none zero values are true
+* conversion between boolean and int is allowed, true is 1 and false is 0
+* functions overloading is not allowed
+* variable redaclation is not allowed unless if it's in different scope
+* a scope is either global or inside of block statement
+* types are stored as contiguous blocks of memory for each field
