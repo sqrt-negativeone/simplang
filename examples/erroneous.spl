@@ -1,0 +1,5 @@
+fnc main(void) : void {
+    for i : 10 to 100 {
+        put (i)
+    }
+}
