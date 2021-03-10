@@ -14,8 +14,3 @@ to compile using cmake run the commands
  to run it, use the command `./out/build/SimpLang filename` or `./out/build/SimpLang < filename`
 
 
-## TODOs list
-
-- [ ] implement semantics checking
-- [ ] some testing
-- [ ] Backend part
